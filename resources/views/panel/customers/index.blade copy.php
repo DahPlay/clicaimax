@@ -36,7 +36,6 @@
                                             <th>Login</th>
                                             <th>E-mail</th>
                                             <th>Documento</th>
-                                            <th>Cupom</th>
                                             <th>Criação</th>
                                             <th>Ações</th>
                                         </tr>

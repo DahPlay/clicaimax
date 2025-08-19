@@ -21,6 +21,7 @@
                                             <th>Valor</th>
                                             <th>Assinatura</th>
                                             <th>Fatura</th>
+                                            <th>Cupom</th>
                                             <th>Cliente Asaas</th>
                                             <th>Assinatura Status</th>
                                             <th>Pagamento</th>

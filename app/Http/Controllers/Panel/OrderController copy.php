@@ -43,8 +43,6 @@ class OrderController extends Controller
     {
         $orders = $this->model
             ->with(['customer:id,name', 'plan:id,name'])
-            ->leftJoin('customers', 'customers.id', '=', 'orders.customer_id')
-            ->leftJoin('coupons', 'coupons.id', '=', 'customers.coupon_id')
             ->select([
                 'orders.id',
                 'orders.customer_id',
@@ -58,7 +56,6 @@ class OrderController extends Controller
                 'orders.payment_status',
                 'orders.created_at',
                 'orders.payment_asaas_id',
-                'coupons.name as coupon_name', // <- nome do cupom
             ]);
 
         return DataTables::of($orders)
@@ -67,28 +64,6 @@ class OrderController extends Controller
             })
             ->editColumn('id', function ($order) {
                 return view('panel.orders.local.index.datatable.id', compact('order'));
-            })
-            ->editColumn('coupon_name', function ($order) {
-                return $order->coupon_name ?? 'N/A';
-            })
-            ->filterColumn('coupon_name', function ($query, $keyword) {
-                $query->whereRaw("coupons.name like ?", ["%{$keyword}%"]);
-            })
-            ->editColumn('customer_id', function ($order) {
-                return $order->customer->name ?? '-';
-            })
-            ->filterColumn('customer_id', function ($query, $keyword) {
-                $query->whereHas('customer', function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%");
-                });
-            })
-            ->editColumn('plan_id', function ($order) {
-                return $order->plan->name ?? '-';
-            })
-            ->filterColumn('plan_id', function ($query, $keyword) {
-                $query->whereHas('plan', function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%");
-                });
             })
             ->filterColumn('status', function ($query, $keyword) {
                 $matchingStatuses = collect(StatusOrderAsaasEnum::cases())
@@ -120,6 +95,8 @@ class OrderController extends Controller
             ->editColumn('payment_asaas_id', function ($item) {
                 return view('panel.orders.local.index.datatable.payment_asaas_id', compact('item'));
             })
+
+
             ->filterColumn('payment_status', function ($query, $keyword) {
                 $matchingStatuses = collect(PaymentStatusOrderAsaasEnum::cases())
                     ->filter(fn($enum) => str_contains($enum->getName(), $keyword))
@@ -164,7 +141,6 @@ class OrderController extends Controller
             })
             ->toJson();
     }
-
 
 
     public function create(): View

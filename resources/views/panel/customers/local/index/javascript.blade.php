@@ -86,6 +86,12 @@
                     className: 'align-middle'
                 },
                 {
+                    data: 'coupon_id',
+                    orderable: true,
+                    searchable: true,
+                    className: 'align-middle'
+                },
+                {
                     data: 'created_at',
                     orderable: true,
                     searchable: true,

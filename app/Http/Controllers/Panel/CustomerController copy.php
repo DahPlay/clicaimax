@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Models\Coupon;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -33,7 +32,6 @@ class CustomerController extends Controller
     public function loadDatatable(): JsonResponse
     {
         $customers = $this->model
-            ->leftJoin('coupons', 'coupons.id', '=', 'customers.coupon_id')
             ->select([
                 'customers.id',
                 'customers.name',
@@ -43,19 +41,11 @@ class CustomerController extends Controller
                 'customers.email',
                 'customers.document',
                 'customers.created_at',
-                'customers.coupon_id',
-                'coupons.name as coupon_name',
             ]);
 
         return DataTables::of($customers)
             ->addColumn('checkbox', function ($customer) {
                 return view('panel.customers.local.index.datatable.checkbox', compact('customer'));
-            })
-            ->editColumn('coupon_id', function ($customer) {
-                return $customer->coupon_name ?? 'N/A';
-            })
-            ->filterColumn('coupon_id', function ($query, $keyword) {
-                $query->whereRaw("coupons.name like ?", ["%{$keyword}%"]);
             })
             ->editColumn('id', function ($customer) {
                 return view('panel.customers.local.index.datatable.id', compact('customer'));

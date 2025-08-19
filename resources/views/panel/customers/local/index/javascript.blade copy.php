@@ -1,6 +1,5 @@
 @section('javascriptLocal')
     <script src="{{ asset('Auth-Panel/plugins/moment/moment.min.js') }}"></script>
-    <script src="{{ asset('Auth-Panel/plugins/inputmask/jquery.inputmask.min.js') }}"></script>
     <script>
         $(function() {
             initDatatable();
@@ -13,10 +12,6 @@
                 openModal(this, e, 'modal-lg');
             });
 
-            $(document).on('click', ".btn-show", function(e) {
-                openModal(this, e, 'modal-lg');
-            });
-
             $(document).on('click', ".btn-delete", function(e) {
                 openModal(this, e, 'modal-lg');
             });
@@ -24,46 +19,7 @@
             $(document).on('click', "#btn-remover", function(e) {
                 executeAll(this, e, 'modal-lg');
             });
-
-            $(document).on('click', ".btn-cancel", function(e) {
-                openModal(this, e, 'modal-lg');
-            });
-
-            $(document).on('click', ".btn-change", function(e) {
-                openModal(this, e, 'modal-lg');
-            });
-
         });
-
-        function removeImage() {
-            event.preventDefault();
-            var url = $(this).parent().find("img").data('url');
-            var id = $(this).parent().find("img").data('id');
-            var token = $(this).parent().find("img").data('token');
-
-            var main = $(this);
-
-            var confirm = window.confirm("Deseja remover a imagem ?");
-
-            if (confirm) {
-                $.ajax({
-                    url: "{{ route('panel.users.removeImage') }}",
-                    type: "post",
-                    data: {
-                        "id": id,
-                        "_token": token
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data) {
-                            $(main).parent('div').html(
-                                "<img width='100' src='{{ asset('/storage/avatars/default.png') }}' alt=''>"
-                            );
-                        }
-                    }
-                });
-            }
-        }
 
         function initDatatable() {
             tableManage.setName('#table');
@@ -94,67 +50,37 @@
                     className: 'align-middle'
                 },
                 {
-                    data: 'customer.name',
-                    orderable: true,
-                    searchable: true,
-                    className: 'align-middle'
-                },
-                {
-                    data: 'plan.name',
-                    orderable: true,
-                    searchable: true,
-                    className: 'align-middle'
-                },
-                {
-                    data: 'value',
-                    orderable: true,
-                    searchable: true,
-                    className: 'align-middle'
-                },
-                {
-                    data: 'subscription_asaas_id',
+                    data: 'name',
                     orderable: true,
                     searchable: true,
                     className: 'name align-middle'
                 },
                 {
-                    data: 'payment_asaas_id',
+                    data: 'customer_id',
                     orderable: true,
                     searchable: true,
                     className: 'name align-middle'
                 },
                 {
-                    data: 'coupon_name',
+                    data: 'viewers_id',
                     orderable: true,
                     searchable: true,
                     className: 'name align-middle'
                 },
                 {
-                    data: 'customer_asaas_id',
-                    orderable: true,
-                    searchable: true,
-                    className: 'name align-middle'
-                },
-                {
-                    data: 'status',
+                    data: 'login',
                     orderable: true,
                     searchable: true,
                     className: 'align-middle'
                 },
                 {
-                    data: 'payment_status',
+                    data: 'email',
                     orderable: true,
                     searchable: true,
                     className: 'align-middle'
                 },
                 {
-                    data: 'next_due_date',
-                    orderable: true,
-                    searchable: true,
-                    className: 'align-middle'
-                },
-                {
-                    data: 'cycle',
+                    data: 'document',
                     orderable: true,
                     searchable: true,
                     className: 'align-middle'
