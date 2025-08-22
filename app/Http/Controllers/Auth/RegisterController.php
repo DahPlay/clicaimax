@@ -135,7 +135,7 @@ class RegisterController extends Controller
     {
         $this->validator($request->all())->validate();
 
-        $data = $request->only(['login', 'name', 'document', 'mobile', 'birthdate', 'email', 'payment_asaas_id']);
+        $data = $request->only(['login', 'name', 'document', 'mobile', 'birthdate', 'email', 'payment_asaas_id', 'cpf_dependente_1', 'cpf_dependente_2', 'cpf_dependente_3']);
 
         if (!session()->has('customerData')) {
             $externalCustomer = $this->verifyCustomerInYouCast($customerService);
@@ -207,12 +207,15 @@ class RegisterController extends Controller
                 ]);
             }
 
-            $data = request()->only(['login', 'name', 'document', 'mobile', 'birthdate', 'email']);
+            $data = request()->only(['login', 'name', 'document', 'mobile', 'birthdate', 'email', 'cpf_dependente_1', 'cpf_dependente_2', 'cpf_dependente_3']);
 
             Customer::create([
                 'viewers_id' => $customerData['viewers_id'],
                 'login' => $customerData['login'],
                 'name' => $customerData['name'],
+                'cpf_dependente_1' => $customerData['cpf_dependente_1'],
+                'cpf_dependente_2' => $customerData['cpf_dependente_2'],
+                'cpf_dependente_3' => $customerData['cpf_dependente_3'],
                 'email' => $data['email'],
                 'coupon_id' => $coupon->id ?? null,
             ]);
