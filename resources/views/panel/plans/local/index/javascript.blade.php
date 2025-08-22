@@ -114,6 +114,12 @@
                     className: 'align-middle'
                 },
                 {
+                    data: 'is_active_telemedicine',
+                    orderable: true,
+                    searchable: true,
+                    className: 'align-middle'
+                },
+                {
                     data: 'billing_type',
                     orderable: true,
                     searchable: true,

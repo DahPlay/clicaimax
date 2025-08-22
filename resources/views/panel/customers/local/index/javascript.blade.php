@@ -86,6 +86,24 @@
                     className: 'align-middle'
                 },
                 {
+                    data: 'cpf_dependente_1',
+                    orderable: true,
+                    searchable: true,
+                    className: 'align-middle'
+                },
+                {
+                    data: 'cpf_dependente_2',
+                    orderable: true,
+                    searchable: true,
+                    className: 'align-middle'
+                },
+                {
+                    data: 'cpf_dependente_3',
+                    orderable: true,
+                    searchable: true,
+                    className: 'align-middle'
+                },
+                {
                     data: 'coupon_id',
                     orderable: true,
                     searchable: true,

@@ -56,7 +56,7 @@ class RegisterController extends Controller
     {
         $planId = $planId ?: '';
 
-        $plans = Plan::select(['id', 'name', 'value'])
+        $plans = Plan::select(['id', 'name', 'value', 'is_active_telemedicine'])
             ->where('is_active', 1)
             ->get();
         $data = Plan::getPlansData();

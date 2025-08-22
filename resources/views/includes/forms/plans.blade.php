@@ -8,7 +8,7 @@
             </div>
         </div>
 
-        <div class="form-group col-12 col-md-6">
+        <div class="form-group col-12 col-md-10">
             <label for="name" class="col-form-label text-danger">Nome: *</label>
             <div class="input-group">
                 <input type="text" id="name" class="form-control" name="name" placeholder="Nome *"
@@ -16,7 +16,7 @@
             </div>
         </div>
 
-        <div class="form-group col-12 col-md-2 p-0 mt-5">
+        <div class="form-group col-12 col-md-4 p-0 mt-5">
             <div class="custom-control custom-switch custom-switch-on-primary d-flex align-items-center"
                  style="width: 250px;">
                 <input type="checkbox" class="custom-control-input overdue" name="is_active" id="is_active"
@@ -25,12 +25,20 @@
             </div>
         </div>
 
-        <div class="form-group col-12 col-md-2 p-0 mt-5">
+        <div class="form-group col-12 col-md-4 p-0 mt-5">
             <div class="custom-control custom-switch custom-switch-on-primary d-flex align-items-center"
                  style="width: 250px;">
                 <input type="checkbox" class="custom-control-input overdue" name="is_best_seller" id="is_best_seller"
                         {{ $plan->is_best_seller ? 'checked' : '' }}>
                 <label class="custom-control-label font-weight-normal ml-2" for="is_best_seller">Mais vendido</label>
+            </div>
+        </div>
+        <div class="form-group col-12 col-md-4 p-0 mt-5">
+            <div class="custom-control custom-switch custom-switch-on-primary d-flex align-items-center"
+                 style="width: 250px;">
+                <input type="checkbox" class="custom-control-input overdue" name="is_active_telemedicine" id="is_active_telemedicine"
+                        {{ $plan->is_active_telemedicine ? 'checked' : '' }}>
+                <label class="custom-control-label font-weight-normal ml-2" for="is_active_telemedicine">Telemedicina</label>
             </div>
         </div>
     </div>
@@ -143,6 +151,7 @@
         formData.append('cycle', $("#cycle").val());
         formData.append('is_active', $("#is_active").is(':checked') ? 1 : 0);
         formData.append('is_best_seller', $("#is_best_seller").is(':checked') ? 1 : 0);
+        formData.append('is_active_telemedicine', $("#is_active_telemedicine").is(':checked') ? 1 : 0);
         formData.append('free_for_days', $("#free_for_days").val());
         formData.append('priority', $("#priority").val());
 

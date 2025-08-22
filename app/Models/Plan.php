@@ -23,6 +23,7 @@ class Plan extends Model
         'free_for_days',
         'priority',
         'hidden',
+        'is_active_telemedicine',
     ];
 
     protected function value(): Attribute

@@ -42,6 +42,9 @@ class CustomerController extends Controller
                 'customers.login',
                 'customers.email',
                 'customers.document',
+                'customers.cpf_dependente_1',
+                'customers.cpf_dependente_2',
+                'customers.cpf_dependente_3',
                 'customers.created_at',
                 'customers.coupon_id',
                 'coupons.name as coupon_name',
@@ -92,6 +95,9 @@ class CustomerController extends Controller
             'mobile',
             'birthdate',
             'email',
+            'cpf_dependente_1',
+            'cpf_dependente_2',
+            'cpf_dependente_3',
         ]);
 
         $validator = Validator::make($data, [
@@ -154,6 +160,9 @@ class CustomerController extends Controller
                 'mobile',
                 'birthdate',
                 'email',
+                'cpf_dependente_1',
+                'cpf_dependente_2',
+                'cpf_dependente_3',
             ]);
 
             $validator = Validator::make($data, [

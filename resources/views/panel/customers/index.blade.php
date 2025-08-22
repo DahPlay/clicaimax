@@ -36,6 +36,9 @@
                                             <th>Login</th>
                                             <th>E-mail</th>
                                             <th>Documento</th>
+                                            <th class="none">Dependente 1</th>
+                                            <th class="none">Dependente 2</th>
+                                            <th class="none">Dependente 3</th>
                                             <th>Cupom</th>
                                             <th>Criação</th>
                                             <th>Ações</th>

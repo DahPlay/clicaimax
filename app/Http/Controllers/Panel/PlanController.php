@@ -45,6 +45,7 @@ class PlanController extends Controller
                 'plans.is_active',
                 'plans.billing_type',
                 'plans.priority',
+                'plans.is_active_telemedicine',
             ])
             ->where('hidden', '!=', 'Sim');  // <-- adiciona esse filtro aqui
 
@@ -85,6 +86,9 @@ class PlanController extends Controller
             })
             ->editColumn('is_active', function ($item) {
                 return view('panel.plans.local.index.datatable.is_active', compact('item'));
+            })
+            ->editColumn('is_active_telemedicine', function ($item) {
+                return view('panel.plans.local.index.datatable.is_active_telemedicine', compact('item'));
             })
             ->addColumn('action', function ($plan) {
                 $loggedId = auth()->user()->id;
@@ -135,6 +139,7 @@ class PlanController extends Controller
 
         // 5) Tratar booleanos
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
+        $data['is_active_telemedicine'] = $request->has('is_active_telemedicine') ? 1 : 0;
         $data['is_best_seller'] = $request->has('is_best_seller') ? 1 : 0;
 
         // 6) Injetar priority no array de dados
@@ -254,6 +259,7 @@ class PlanController extends Controller
             'billing_type',
             'free_for_days',
             'priority',
+            'is_active_telemedicine',
         ]);
 
         $validator = Validator::make($data, [
@@ -261,6 +267,7 @@ class PlanController extends Controller
             'value' => ['required', 'string', 'min:0'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'string'],
+            'is_active_telemedicine' => ['nullable', 'string'],
             'is_best_seller' => ['nullable', 'string'],
             'billing_type' => ['string'],
             'free_for_days' => ['integer'],
@@ -281,6 +288,7 @@ class PlanController extends Controller
         }
 
         $data['is_active'] = isset($data['is_active']) ? 1 : 0;
+        $data['is_active_telemedicine'] = isset($data['is_active_telemedicine']) ? 1 : 0;
         $data['is_best_seller'] = isset($data['is_best_seller']) ? 1 : 0;
 
         $plan->update($data);

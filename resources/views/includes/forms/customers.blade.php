@@ -7,6 +7,13 @@
                     value="{{ $customer->name ?? old('name') }}" required>
             </div>
         </div>
+         <div class="form-group col-12 col-md-4">
+            <label for="mobile" class="col-form-label text-danger">Celular: *</label>
+            <div class="input-group">
+                <input type="text" id="mobile" class="form-control" name="mobile" placeholder="Celular *"
+                    value="{{ $customer->mobile ?? old('mobile') }}" required>
+            </div>
+        </div>
 
         <div class="form-group col-12 col-md-4">
             <label for="document" class="col-form-label text-danger">Documento: *</label>
@@ -17,12 +24,28 @@
         </div>
 
         <div class="form-group col-12 col-md-4">
-            <label for="mobile" class="col-form-label text-danger">Celular: *</label>
+            <label for="cpf_dependente_1" class="col-form-label text-danger">CPF Dependente 1:</label>
             <div class="input-group">
-                <input type="text" id="mobile" class="form-control" name="mobile" placeholder="Celular *"
-                    value="{{ $customer->mobile ?? old('mobile') }}" required>
+                <input type="text" id="cpf_dependente_1" class="form-control" name="cpf_dependente_1" placeholder="CPF Dependente 1"
+                    value="{{ $customer->cpf_dependente_1 ?? old('cpf_dependente_1') }}">
             </div>
         </div>
+        <div class="form-group col-12 col-md-4">
+            <label for="cpf_dependente_2" class="col-form-label text-danger">CPF Dependente 2:</label>
+            <div class="input-group">
+                <input type="text" id="cpf_dependente_2" class="form-control" name="cpf_dependente_2" placeholder="CPF Dependente 2"
+                    value="{{ $customer->cpf_dependente_2 ?? old('cpf_dependente_2') }}">
+            </div>
+        </div>
+        <div class="form-group col-12 col-md-4">
+            <label for="cpf_dependente_3" class="col-form-label text-danger">CPF Dependente 3:</label>
+            <div class="input-group">
+                <input type="text" id="cpf_dependente_3" class="form-control" name="cpf_dependente_3" placeholder="CPF Dependente 3"
+                    value="{{ $customer->cpf_dependente_3 ?? old('cpf_dependente_3') }}">
+            </div>
+        </div>
+
+       
     </div>
 
     <div class="row">
@@ -84,6 +107,9 @@
         formData.append('mobile', $("#mobile").val());
         formData.append('birthdate', $("#birthdate").val());
         formData.append('email', $("#email").val());
+        formData.append('cpf_dependente_1', $("#cpf_dependente_1").val());
+        formData.append('cpf_dependente_2', $("#cpf_dependente_2").val());
+        formData.append('cpf_dependente_3', $("#cpf_dependente_3").val());
 
         return formData;
     }
@@ -103,6 +129,9 @@
 
     function initMasks() {
         $('#document').mask('000.000.000-00');
+        $('#cpf_dependente_1').mask('000.000.000-00');
+        $('#cpf_dependente_2').mask('000.000.000-00');
+        $('#cpf_dependente_3').mask('000.000.000-00');
         $('#mobile').mask('(00) 00000-0000');
     }
 </script>

@@ -25,6 +25,9 @@ class Customer extends Model
         'email',
         'mobile',
         'coupon_id',
+        'cpf_dependente_1',
+        'cpf_dependente_2',
+        'cpf_dependente_3'
     ];
 
     protected function document(): Attribute
