@@ -115,7 +115,7 @@ class CouponController extends Controller
 
         $coupon = $this->model->find($this->request->id);
         $coupon = $coupon->update($data);
-        // ds($coupon);
+        // ds($coupon); 23/08/2025 Comentado esse trecho pois estava dando erro, verificar se precisa dessa função mais tarde
         if ($coupon) {
             return response()->json([
                 'status' => '200',

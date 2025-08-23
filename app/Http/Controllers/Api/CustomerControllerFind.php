@@ -38,13 +38,15 @@ class CustomerControllerFind extends Controller
         // }
 
         //TODOS OS PLANOS
-         $customer = Customer::where('document', $cpf)
+        $customer = Customer::where('document', $cpf)
             ->whereHas('orders', function ($query) {
                 $query->where('status', 'ACTIVE');
             })
-            ->with(['orders' => function ($query) {
-                $query->where('status', 'ACTIVE')->with('plan');
-            }])
+            ->with([
+                'orders' => function ($query) {
+                    $query->where('status', 'ACTIVE')->with('plan');
+                }
+            ])
             ->first();
 
         if (!$customer) {
@@ -56,6 +58,9 @@ class CustomerControllerFind extends Controller
         return response()->json([
             'nome' => $customer->name,
             'cpf' => $customer->document,
+            'cpf_dependente_1' => $customer->cpf_dependente_1,
+            'cpf_dependente_2' => $customer->cpf_dependente_2,
+            'cpf_dependente_3' => $customer->cpf_dependente_3,
             'status_plano' => $order->status ?? 'N/A',
             'nome_plano' => $order->plan->name ?? 'N/A',
         ]);

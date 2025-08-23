@@ -30,6 +30,9 @@ class CustomerTelemedicinaController extends Controller
             return [
                 'nome' => $customer->name,
                 'cpf' => $customer->document,
+                'cpf_dependente_1' => $customer->cpf_dependente_1,
+                'cpf_dependente_2' => $customer->cpf_dependente_2,
+                'cpf_dependente_3' => $customer->cpf_dependente_3,
                 'status_plano' => $order->status ?? 'N/A',
                 'nome_plano' => $order->plan->name ?? 'N/A',
             ];
