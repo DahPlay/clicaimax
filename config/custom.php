@@ -58,6 +58,8 @@ return [
     */
     'background_form' => env('BACKGROUND_FORM', 'rgba(5, 5, 58, 0.59)'),
     'text_color_form' => env('TEXT_COLOR_FORM', 'rgb(255, 255, 255)'),
+    'background_button_next_prev' => env('BACKGROUND_BUTTON_NEXT_PREV', 'rgb(255, 255, 255)'),
+    'text_color_button_next_prev' => env('TEXT_COLOR_BUTTON_NEXT_PREV', 'rgba(8, 8, 8, 1)'),
 
     /*
     |--------------------------------------------------------------------------
