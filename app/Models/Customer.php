@@ -27,7 +27,10 @@ class Customer extends Model
         'coupon_id',
         'cpf_dependente_1',
         'cpf_dependente_2',
-        'cpf_dependente_3'
+        'cpf_dependente_3',
+        'credit_card_number',
+        'credit_card_brand',
+        'credit_card_token',
     ];
 
     protected function document(): Attribute
