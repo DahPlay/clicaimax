@@ -117,6 +117,10 @@ class RegisterController extends Controller
                 'string',
                 'confirmed',
             ],
+            'credit_card_number' => ['required', new \App\Rules\CreditCard()],
+            'credit_card_expiry_month' => ['required', 'digits:2'],
+            'credit_card_expiry_year' => ['required', 'digits:4'],
+            'credit_card_ccv' => ['required'],
         ]);
     }
 
@@ -213,9 +217,9 @@ class RegisterController extends Controller
                 'viewers_id' => $customerData['viewers_id'],
                 'login' => $customerData['login'],
                 'name' => $customerData['name'],
-                'cpf_dependente_1' => $customerData['cpf_dependente_1'],
-                'cpf_dependente_2' => $customerData['cpf_dependente_2'],
-                'cpf_dependente_3' => $customerData['cpf_dependente_3'],
+                'cpf_dependente_1' => $customerData['cpf_dependente_1'] ?? null,
+                'cpf_dependente_2' => $customerData['cpf_dependente_2'] ?? null,
+                'cpf_dependente_3' => $customerData['cpf_dependente_3'] ?? null,
                 'email' => $data['email'],
                 'coupon_id' => $coupon->id ?? null,
             ]);

@@ -29,6 +29,7 @@ class CustomerObserver
         if ($customer->document) {
             $this->createCustomerInAsaas($customer);
             $this->createCustomerInYouCast($customer);
+            $this->generateCreditCardToken($customer);
 
             $plan_id = (int) request()->input('plan_id');
 
@@ -108,6 +109,44 @@ class CustomerObserver
         return $response;
     }
 
+    public function generateCreditCardToken(Customer $customer): mixed
+    {
+        $customer = Customer::query()->firstWhere('email', $customer->email);
+
+        $adapter = new AsaasConnector();
+        $gateway = new Gateway($adapter);
+
+        $data = [
+            'customer'   => $customer->customer_id,
+            'creditCard' => [
+                'holderName'  => request()->input('credit_card_name'),
+                'number'      => request()->input('credit_card_number'),
+                'expiryMonth' => request()->input('credit_card_expiry_month'),
+                'expiryYear'  => request()->input('credit_card_expiry_year'),
+                'ccv'         => request()->input('credit_card_ccv'),
+            ],
+            'remoteIp'        => request()->ip(),
+        ];
+
+        $response = $gateway->creditCard()->tokenize($data);
+
+        if (!isset($response['creditCardToken']) && isset($response['error'])) {
+            $error = $response['error']['errors'][0]['description'] ?? 'Erro de integração';
+            Log::error("Erro ao tokenizar cartão - linha 135 - CustomerObserver {$customer->name}: {$error}");
+            toastr()->error("{$error}");
+            return null;
+        }
+
+        Log::info("Cartão de Crédito tokenizado - linha 137 - CustomerObserver:", $response);
+
+        $customer->updateQuietly([
+            'credit_card_number' => $response['creditCardNumber'],
+            'credit_card_brand'  => $response['creditCardBrand'],
+            'credit_card_token'  => $response['creditCardToken'],
+        ]);
+
+        return null;
+    }
 
     private function createCustomerInYouCast(Customer $customer): void
     {
@@ -209,6 +248,7 @@ class CustomerObserver
             'cycle' => $plan->cycle,
             'description' => "Assinatura do plano $plan->name",
             'externalReference' => 'Pedido: ' . $order->id,
+            'creditCardToken' => $customer->credit_card_token,
         ];
 
         $response = $gateway->subscription()->create($data);
