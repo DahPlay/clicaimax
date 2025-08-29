@@ -208,7 +208,7 @@
         <div class="card-register m-auto"
              style="background-color: {{ config('custom.background_form') }};
             color: {{ config('custom.text_color_recuperar') }};
-            border: 4px solid green;">
+            border: 4px solid {{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">
 
             <div class="card-body-register login-card-body">
                 <div class="login-logo">
