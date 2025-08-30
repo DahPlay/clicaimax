@@ -260,8 +260,9 @@
                             <select id="plan_id" class="form-control" name="plan_id" required>
                                 <option value="">Selecione...</option>
                                 @foreach ($plans as $plan)
-                                    <option value="{{ $plan->id }}" @selected($plan->id == $planId)>
+                                    <option value="{{ $plan->id }}" data-telemedicine="{{ $plan->is_active_telemedicine }}" @selected($plan->id == $planId)>
                                         {{ $plan->name . ' - ' . number_format($plan->value, 2, ',', '.') }}
+                                        
                                     </option>
                                 @endforeach
                             </select>
@@ -301,6 +302,24 @@
                             <input type="text" @error('document') has-error @enderror value="{{ old('document') ?? '' }}"
                                    name="document" id="document" class="form-control" placeholder="Digite seu cpf *"
                                    required>
+                        </div>
+
+                        <div id="dependentes-fields" style="display:none;">
+                            <div class="input-group mb-3">
+                                <label class="title-input2" for="cpf_dependente_1">CPF Dependente 1</label>
+                                <input type="text" name="cpf_dependente_1" id="cpf_dependente_1" class="form-control"
+                                    placeholder="Digite o CPF do seu 1° Dependente">
+                            </div>
+                            <div class="input-group mb-3">
+                                <label class="title-input2" for="cpf_dependente_2">CPF Dependente 2</label>
+                                <input type="text" name="cpf_dependente_2" id="cpf_dependente_2" class="form-control"
+                                    placeholder="Digite o CPF do seu 2° Dependente">
+                            </div>
+                            <div class="input-group mb-3">
+                                <label class="title-input2" for="cpf_dependente_3">CPF Dependente 3</label>
+                                <input type="text" name="cpf_dependente_3" id="cpf_dependente_3" class="form-control"
+                                    placeholder="Digite o CPF do seu 3° Dependente">
+                            </div>
                         </div>
 
                         @error('document')
@@ -517,7 +536,38 @@
         $(function () {
             initSelects2();
             initMasks();
+            const $dependentesFields = $('#dependentes-fields');
+
+            $('#plan_id').on('change', function () {
+                const planId = $(this).val();
+                const telemedicine = $(this).find(':selected').data('telemedicine');
+
+                // console.log('Plano selecionado ID:', planId);
+                // console.log('Is active telemedicine:', telemedicine);
+
+                if (telemedicine == 1) {
+                    $dependentesFields.show();                    
+                    $dependentesFields.show();
+                } else {
+                    $dependentesFields.hide();                    
+                    $dependentesFields.hide();
+                    // opcional: limpar os campos ao esconder
+                    $dependentesFields.find('input').val('');                    
+                    $dependentesFields.find('input').val('');
+                }
+            });
+
+            // Se o select já vier com valor selecionado ao carregar a página
+            const initialTelemedicine = $('#plan_id').find(':selected').data('telemedicine');
+            if (initialTelemedicine == 1) {
+                $dependentesFields.show();                
+                $dependentesFields.show();
+            } else {
+                $dependentesFields.hide();                
+                $dependentesFields.hide();
+            }
             initStepNavigation();
+            
         });
 
         function initSelects2() {
@@ -529,6 +579,9 @@
 
         function initMasks() {
             $('#document').mask('000.000.000-00');
+            $('#cpf_dependente_1').mask('000.000.000-00');
+            $('#cpf_dependente_2').mask('000.000.000-00');
+            $('#cpf_dependente_3').mask('000.000.000-00');
             $('#mobile').mask('(00) 00000-0000');
         }
 
