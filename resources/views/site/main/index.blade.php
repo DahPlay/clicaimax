@@ -287,7 +287,7 @@
         </section> <!-- OCULTAR -->
     @else
         <div class="banner-container">
-            <img src="https://www.bitmag.com.br/wp-content/uploads/2024/07/tv-paga.jpg" alt="Imagem de fundo"
+            <img src="{{ config('custom.home_simple_image') }}" alt="Imagem de fundo"
                 class="banner-background">
 
             <div class="banner-overlay 
