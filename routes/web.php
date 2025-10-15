@@ -83,8 +83,8 @@ Route::middleware('auth')->name('panel.')->group(function () {
         Route::get('/accesses', [AccessController::class, 'index'])
             ->name('index')
             ->setWheres([
-                'titleBreadCrumb' => 'Lista de Assinaturas',
-                'title' => 'Lista de Assinaturas | ' . config('custom.project_name'),
+                'titleBreadCrumb' => 'Lista de Perfis',
+                'title' => 'Lista de Perfis | ' . config('custom.project_name'),
             ]);
 
         Route::get('/accesses/loadDatatable', [AccessController::class, 'loadDatatable'])->name('loadDatatable');
