@@ -460,7 +460,7 @@ class OrderController extends Controller
                             : "Erro ao remover pagamento no Asaas para atualização de plano. Pedido: $order->id"
                     );
                 }
-            };
+            }
 
             $dailyRate = (float) $actualPlanValue / (float) $cycleDays;
             $dailyRate = floor($dailyRate * 100) / 100;
