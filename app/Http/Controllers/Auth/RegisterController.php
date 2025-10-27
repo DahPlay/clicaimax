@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use App\Services\AppIntegration\CustomerService;
+use App\Services\RegistrationService;
 use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\DB;
 
 class RegisterController extends Controller
 {
@@ -38,11 +40,17 @@ class RegisterController extends Controller
         $plan = Plan::find($planId);
         $coupon = $this->getCoupon($couponName);
 
-        if (!$coupon->is_active || !$plan) {
+        if (!$coupon?->is_active || !$plan) {
             return response()->json(['valid' => false, 'message' => 'Cupom inválido.']);
         }
 
         $discountedValue = $this->getDiscount($plan, $coupon);
+
+        $discountedValueFormat = number_format($discountedValue, 2, ',', '.');
+
+        if ($discountedValue > 0 && $discountedValue <= 5) {
+            return response()->json(['valid' => false, 'message' => "O valor final de R$$discountedValueFormat após o cupom ser aplicado não pode ser menor que R$5,00."]);
+        }
 
         return response()->json([
             'valid' => true,
@@ -133,58 +141,111 @@ class RegisterController extends Controller
         ]);
     }
 
-
-
-    public function register(Request $request, CustomerService $customerService)
+    public function register(Request $request, CustomerService $customerService, RegistrationService $registrationService)
     {
         $this->validator($request->all())->validate();
 
-        $data = $request->only(['login', 'name', 'document', 'mobile', 'birthdate', 'email', 'payment_asaas_id', 'cpf_dependente_1', 'cpf_dependente_2', 'cpf_dependente_3']);
+        $data = $request->only([
+            'plan_id',
+            'login',
+            'password',
+            'name',
+            'document',
+            'mobile',
+            'email',
+            'payment_asaas_id',
+            'cpf_dependente_1',
+            'cpf_dependente_2',
+            'cpf_dependente_3',
+            'credit_card_name',
+            'credit_card_number',
+            'credit_card_expiry_month',
+            'credit_card_expiry_year',
+            'credit_card_ccv',
+            'coupon',
+        ]);
 
-        if (!session()->has('customerData')) {
-            $externalCustomer = $this->verifyCustomerInYouCast($customerService);
-
-            if ($externalCustomer instanceof RedirectResponse) {
-                return $externalCustomer;
-            }
-        }
-
-        $data['coupon_id'] = $this->getCoupon($request->coupon)->id ?? null;
+        $couponName = $request->input('coupon');
+        $planId = $request->input('plan_id');
 
         try {
-            $customer = Customer::updateOrCreate(
-                ['login' => $data['login']],
-                $data
-            );
-        } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() === '23000') {
-                $errorMessage = $e->getMessage();
+            if ($couponName) {
+                $plan = Plan::find($planId);
+                $coupon = $this->getCoupon($couponName);
 
-                if (strpos($errorMessage, 'customers_document_unique') !== false) {
-                    return back()->withInput()->withErrors(['document' => 'O CPF/CNPJ informado já está cadastrado.']);
+                if (!$coupon?->is_active || !$plan) {
+                    Log::channel('registration')->info('Tentativa de registro com cupom inválido', [
+                        'coupon' => $couponName,
+                        'plan_id' => $planId,
+                        'email' => $data['email'] ?? 'n/a',
+                    ]);
+                    toastr()->info("Cupom inválido.");
+                    return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
                 }
 
-                if (strpos($errorMessage, 'customers_login_unique') !== false) {
-                    return back()->withInput()->withErrors(['login' => 'O login informado já está em uso.']);
+                $discountedValue = $this->getDiscount($plan, $coupon);
+                $discountedValueFormat = number_format($discountedValue, 2, ',', '.');
+
+                if ($discountedValue > 0 && $discountedValue <= 5) {
+                    Log::channel('registration')->info('Tentativa de registro com valor final abaixo do mínimo', [
+                        'coupon' => $couponName,
+                        'plan_id' => $planId,
+                        'final_value' => $discountedValue,
+                        'email' => $data['email'] ?? 'n/a',
+                    ]);
+                    toastr()->info("O valor final de R$$discountedValueFormat após o cupom ser aplicado não pode ser menor que R$5,00.");
+                    return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
                 }
             }
 
-            Log::error("RegisterController - linha - 138: {$e->getMessage()}");
+            if (!session()->has('customerData')) {
+                $externalCustomer = $this->verifyCustomerInYouCast($customerService);
+                if ($externalCustomer instanceof RedirectResponse) {
+                    Log::channel('registration')->info('Redirecionado por verificação YouCast', [
+                        'email' => $data['email'] ?? 'n/a',
+                    ]);
+                    return $externalCustomer;
+                }
+            }
 
-            return back()->withInput()->withErrors(['error' => 'Ocorreu um erro ao processar o registro. Tente novamente mais tarde.']);
+            $data['coupon_id'] = $this->getCoupon($request->coupon)?->id;
+
+            Log::channel('registration')->info('Iniciando processo de registro', [
+                'email' => $data['email'],
+                'login' => $data['login'],
+                'plan_id' => $data['plan_id'],
+                'has_coupon' => !empty($data['coupon_id']),
+            ]);
+
+            $customer = $registrationService->handle($data);
+
+            Log::channel('registration')->info('Registro concluído com sucesso', [
+                'customer_id' => $customer->id,
+                'email' => $customer->email,
+                'asaas_id' => $customer->customer_id,
+                'youcast_id' => $customer->viewers_id,
+            ]);
+
+            toastr()->success('Criado com sucesso! Acesse seu e-mail ou faça login.');
+            return redirect('/login');
+        } catch (\InvalidArgumentException $e) {
+            Log::channel('registration')->warning('Falha na validação do registro', [
+                'error' => $e->getMessage(),
+                'email' => $data['email'] ?? 'n/a',
+                'login' => $data['login'] ?? 'n/a',
+            ]);
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            Log::channel('registration')->error('Erro crítico no registro', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'email' => $data['email'] ?? 'n/a',
+                'login' => $data['login'] ?? 'n/a',
+            ]);
+            toastr()->info($e->getMessage());
+            return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
         }
-
-        toastr()->success('Criado com sucesso, Acesse seu email ou faça o login para visualizar sua Assinatura!');
-
-        session()->forget('customerData');
-
-        $login = $data['login'];
-        return redirect('/login?login=' . $login);
-
     }
-
-
-
 
     private function verifyCustomerInYouCast(CustomerService $customerService): mixed
     {
@@ -232,12 +293,10 @@ class RegisterController extends Controller
         return null;
     }
 
-
     private function getCoupon(mixed $couponName): ?Coupon
     {
         return Coupon::where('name', $couponName)->first();
     }
-
 
     private function getDiscount(Plan $plan, Coupon $coupon): mixed
     {

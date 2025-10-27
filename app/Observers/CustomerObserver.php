@@ -24,12 +24,16 @@ class CustomerObserver
 {
     public function created(Customer $customer): void
     {
+        if (app()->runningInConsole() || request()->is('register')) {
+            return;
+        }
+
         $this->createUser($customer);
 
         if ($customer->document) {
             $this->createCustomerInAsaas($customer);
-            $this->createCustomerInYouCast($customer);
             $this->generateCreditCardToken($customer);
+            $this->createCustomerInYouCast($customer);
 
             $plan_id = (int) request()->input('plan_id');
 
@@ -39,9 +43,7 @@ class CustomerObserver
         }
     }
 
-    public function deleted(Customer $customer)
-    {
-    }
+    public function deleted(Customer $customer) {}
 
     private function createUser(Customer $customer): void
     {
@@ -76,31 +78,53 @@ class CustomerObserver
             'mobilePhone' => sanitize($customer->mobile),
         ];
 
+        $response = $gateway->customer()->list($data);
+
+        if (!empty($response['data'])) {
+            $customer->updateQuietly([
+                'customer_id' => $response['data'][0]['id']
+            ]);
+
+            return $response;
+        }
+
         $response = $gateway->customer()->create($data);
 
         if (is_null($response)) {
             Log::error("Erro ao atualizar {$customer->name}: retorno nulo");
-            toastr()->error("Erro ao atualizar {$customer->name}: retorno nulo");
+            toastr()->error("Erro ao atualizar {$customer->name}: retorno nulo", [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
 
             return null;
         }
 
         if (!isset($response['id']) && is_string($response['error'])) {
             Log::error("Erro ao atualizar {$customer->name}: {$response['error']}");
-            toastr()->error("Erro ao atualizar {$customer->name}: {$response['error']}");
+            toastr()->error("Erro ao atualizar {$customer->name}: {$response['error']}", [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
 
             return null;
         }
 
         if (!isset($response['id']) && is_array($response['error'])) {
             $error = $response['error']['errors'][0]['description'] ?? 'Erro de integração';
-            toastr()->error($error);
+            toastr()->error($error, [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
             Log::error("Erro ao atualizar - linha 92 - CustomerObserver {$customer->name}: {$error}");
 
             return null;
         }
 
-        Log::info("Customer criado na YouCast - linha 97 - CustomerObserver:", $response);
+        Log::info("Customer criado no ASAAS - linha 97 - CustomerObserver:", $response);
 
         $customer->updateQuietly([
             'customer_id' => $response['id']
@@ -133,8 +157,13 @@ class CustomerObserver
         if (!isset($response['creditCardToken']) && isset($response['error'])) {
             $error = $response['error']['errors'][0]['description'] ?? 'Erro de integração';
             Log::error("Erro ao tokenizar cartão - linha 135 - CustomerObserver {$customer->name}: {$error}");
-            toastr()->error("{$error}");
-            return null;
+            toastr()->error("{$error}", [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
+            //return null;
+            throw new \Exception($error);
         }
 
         Log::info("Cartão de Crédito tokenizado - linha 137 - CustomerObserver:", $response);
@@ -185,6 +214,7 @@ class CustomerObserver
         $customer = Customer::query()->firstWhere('email', $customer->email);
         $plan = Plan::query()->firstWhere('id', $plan_id);
         $coupon = null;
+        $packagesToCreate = [];
         $value = $plan->value;
         if ($customer->coupon_id !== null) {
             $coupon = Coupon::find($customer->coupon_id);
@@ -192,6 +222,7 @@ class CustomerObserver
 
         if ($coupon) {
             $value = $plan->value - ($plan->value * ($coupon->percent / 100));
+            $packagesToCreate[] = $coupon->cod;
         }
         $order = Order::create([
             'customer_id' => $customer->id,
@@ -207,7 +238,7 @@ class CustomerObserver
         /* if ($order->plan->free_for_days > 0) {
              (new PlanCreate())->handle($customer->viewers_id, 861);
          }*/
-        $packagesToCreate = [];
+
         foreach ($order->plan->packagePlans as $packagePlan) {
             $pack = Package::find($packagePlan->package_id);
             $packagesToCreate[] = $pack->cod;
@@ -256,14 +287,22 @@ class CustomerObserver
         if (!isset($response['id']) && isset($response['error']) && is_string($response['error'])) {
             $error = $response['error']['errors'][0]['description'] ?? 'Erro de integração';
             Log::error("Erro ao atualizar - linha 150 - CustomerObserver {$customer->name} - {$plan->name}: {$error}");
-            toastr()->error("{$error}");
+            toastr()->error("{$error}", [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
             return '';
         }
 
         if (!isset($response['id']) && isset($response['error']) && is_array($response['error'])) {
             $error = $response['error']['errors'][0]['description'] ?? 'Erro de integração';
             Log::error("Erro ao atualizar - linha 159 - CustomerObserver {$customer->name} - {$plan->name}: {$error}");
-            toastr()->error($error);
+            toastr()->error($error, [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
             return '';
         }
 
@@ -277,15 +316,22 @@ class CustomerObserver
             return $response['id'];
         } else {
             Log::error("Assinatura não foi criada corretamente para {$customer->name}. Resposta sem ID: " . json_encode($response));
-            toastr()->error("Não foi possível criar a assinatura. Verifique o log.");
+            toastr()->error("Não foi possível criar a assinatura. Verifique o log.", [
+                'closeButton' => true,
+                'timeOut' => 0,
+                'extendedTimeOut' => 0,
+            ]);
             return null;
         }
-
     }
 
 
     public function updated(Customer $customer): void
     {
+        if (app()->runningInConsole() || request()->is('register')) {
+            return;
+        }
+
         $customerSearch = (new CustomerSearch)->handle($customer->login);
 
         Log::info("customerSearch: ");

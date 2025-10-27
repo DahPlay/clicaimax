@@ -90,7 +90,7 @@
 
                     var z_index = modalOpenToModal();
 
-                    $(modal).css('z-index', ++z_index);
+                    $('#modal').css('z-index', ++z_index);
 
                     $('#modal .modal-dialog').attr('class', 'modal-dialog ' + modal_witdh);
                     $('#modal .modal-dialog').html(response);

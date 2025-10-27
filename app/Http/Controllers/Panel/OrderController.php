@@ -213,7 +213,6 @@ class OrderController extends Controller
                 ]
             ]);
         }
-
     }
 
     public function edit($id): View
@@ -436,10 +435,12 @@ class OrderController extends Controller
             'YEARLY' => 365,
             default => 30,
         };
+
         $adapter = app(AsaasConnector::class);
         $gateway = new Gateway($adapter);
 
         $subscription = $gateway->subscription()->get($order->subscription_asaas_id);
+
         $daysUsed = $cycleDays - now()->diffInDays($subscription['nextDueDate']);
         $actualPlanValue = $order->value;
         $newPlanValue = $plan->value;
@@ -455,18 +456,25 @@ class OrderController extends Controller
                     $paymentDeleted = $gateway->payment()->delete($subscriptionPayment['id']);
                     logger(
                         $paymentDeleted['deleted']
-                        ? "Pagamento removido no Asaas para atualização de plano. Pedido: $order->id"
-                        : "Erro ao remover pagamento no Asaas para atualização de plano. Pedido: $order->id"
+                            ? "Pagamento removido no Asaas para atualização de plano. Pedido: $order->id"
+                            : "Erro ao remover pagamento no Asaas para atualização de plano. Pedido: $order->id"
                     );
                 }
-            }
-            ;
+            };
 
             $dailyRate = (float) $actualPlanValue / (float) $cycleDays;
             $dailyRate = floor($dailyRate * 100) / 100;
             $credit = $dailyRate * ($cycleDays - $daysUsed);
             $invoiceValue = max(0, $newPlanValue - $credit);
 
+            if ($invoiceValue <= 5) {
+                toastr(
+                    "Não é possível trocar o plano nesse momento pois a diferença entre os valores de R$$invoiceValue é menor que R$5,00.",
+                    'info'
+                );
+
+                return redirect()->route('panel.orders.index');
+            }
 
             /* logger('cálculos', [
                  'credito' => $credit,
@@ -550,15 +558,22 @@ class OrderController extends Controller
                 'plan_id' => $plan->id,
                 'description' => $plan->description,
                 'changed_plan' => true,
+                'value' => $invoiceValue,
                 'original_plan_value' => $plan->value
             ]);
+
             return true;
         }
 
-        Log::error('Erro no retorno do Asaas ao atualizar assinatura.', [
-            'response' => $response,
-            'order_id' => $order->id,
-        ]);
+        if (isset($response['error'])) {
+            $error = $response['error']['errors'][0]['description'] ?? 'Erro ao criar cliente no Asaas';
+            Log::error("Asaas - Erro no retorno do Asaas ao atualizar assinatura.", [
+                'response' => $error,
+                'order_id' => $order->id,
+            ]);
+
+            toastr()->info($error);
+        }
 
         return false;
     }
