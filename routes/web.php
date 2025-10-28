@@ -148,37 +148,30 @@ Route::middleware('auth')->name('panel.')->group(function () {
                 'title' => 'Lista de Clientes | ' . config('custom.project_name'),
             ])->middleware('can:admin');
 
-        Route::get('/users/loadDatatable', [UserController::class, 'loadDatatable'])->name('loadDatatable')->middleware('can:admin');
-        ;
+        Route::get('/users/loadDatatable', [UserController::class, 'loadDatatable'])->name('loadDatatable')->middleware('can:admin');;
 
         Route::post('/users/store', [UserController::class, 'store'])
-            ->name('store')->middleware('can:admin');
-        ;
+            ->name('store')->middleware('can:admin');;
 
         // Post por causa do envio da imagem via ajax
         Route::post('/users/update/{id}', [UserController::class, 'update'])
             ->name('update');
 
         Route::delete('/users/destroy/{id}', [UserController::class, 'destroy'])
-            ->name('destroy')->middleware('can:admin');
-        ;
+            ->name('destroy')->middleware('can:admin');;
 
         Route::delete('/users/destroyAll', [UserController::class, 'destroyAll'])
-            ->name('destroyAll')->middleware('can:admin');
-        ;
+            ->name('destroyAll')->middleware('can:admin');;
 
         Route::post('/users/removeImage', [UserController::class, 'removeImage'])
-            ->name('removeImage')->middleware('can:admin');
-        ;
+            ->name('removeImage')->middleware('can:admin');;
 
         // Modais
         Route::get('/users/create', [UserController::class, 'create'])
-            ->name('create')->middleware('can:admin');
-        ;
+            ->name('create')->middleware('can:admin');;
 
         Route::get('/users/delete/{id}', [UserController::class, 'delete'])
-            ->name('delete')->middleware('can:admin');
-        ;
+            ->name('delete')->middleware('can:admin');;
 
         Route::get('/users/edit/{id}', [UserController::class, 'edit'])
             ->name('edit');
@@ -375,6 +368,9 @@ Route::middleware('auth')->name('panel.')->group(function () {
         Route::post('orders/changePlanStore', [OrderController::class, 'changePlanStore'])
             ->name('changePlanStore');
 
+        Route::put('/orders/updateCard/{order}', [OrderController::class, 'updateCard'])
+            ->name('updateCard');
+
         // Modais
         Route::get('/orders/create', [OrderController::class, 'create'])
             ->name('create');
@@ -396,9 +392,13 @@ Route::middleware('auth')->name('panel.')->group(function () {
 
         Route::get('/orders/changePlan/{id}', [OrderController::class, 'changePlan'])
             ->name('changePlan');
+
+        Route::get('/orders/showCards/{id}', [OrderController::class, 'showCards'])
+            ->name('showCards');
+
+        Route::get('/order/changeCard/{id_order}', [OrderController::class, 'changeCard'])
+            ->name('changeCard');
     });
-
-
 });
 
 
@@ -429,6 +429,3 @@ Route::get('/api/fatura-atual', function () {
         'boleto_url' => $boletoUrl,
     ]);
 });
-
-
-

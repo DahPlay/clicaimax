@@ -6,6 +6,9 @@ use App\Enums\CycleAsaasEnum;
 use App\Enums\PaymentStatusOrderAsaasEnum;
 use App\Enums\StatusOrderAsaasEnum;
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
+use App\Models\Customer;
+use App\Models\CustomerCreditCard;
 use App\Models\Order;
 use App\Models\Package;
 use App\Models\Plan;
@@ -22,6 +25,7 @@ use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
 use App\Services\PaymentGateway\Connectors\Asaas\Subscription;
 use App\Services\PaymentGateway\Contracts\AdapterInterface;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -515,6 +519,176 @@ class OrderController extends Controller
         }
 
         return redirect()->route('panel.orders.index');
+    }
+
+    public function changeCard(string $id_order)
+    {
+        return view('panel.orders.local.index.modals.edit-card', compact('id_order'));
+    }
+
+    public function showCards($id): View
+    {
+        $order = $this->model->find($this->request->id);
+
+        return view('panel.orders.local.index.modals.change-card', compact('order'));
+    }
+
+    public function updateCard(Order $order)
+    {
+        $data = $this->request->only([
+            "id_order",
+            "credit_card_number",
+            "credit_card_name",
+            "credit_card_expiry_month",
+            "credit_card_expiry_year",
+            "credit_card_ccv"
+        ]);
+
+        $validator = Validator::make($data, [
+            'credit_card_number' => ['required', 'string', 'max:19'],
+            'credit_card_name' => ['required', 'string', 'max:255'],
+            'credit_card_expiry_month' => ['required', 'string', 'max:2'],
+            'credit_card_expiry_year' => ['required', 'string', 'max:4'],
+            'credit_card_ccv' => ['required', 'string', 'max:4'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 400,
+                'errors' => $validator->errors(),
+            ]);
+        }
+
+        $customer = $order->customer;
+
+        $newLast4 = substr(preg_replace('/\D/', '', $data['credit_card_number']), -4);
+        $existingLast4 = $customer->credit_card_number ? substr($customer->credit_card_number, -4) : null;
+
+        if ($existingLast4 && $newLast4 === $existingLast4) {
+            return response()->json([
+                'status' => 400,
+                'errors' => [
+                    'message' => ['Este cartão já está em uso. Por favor, insira um cartão diferente.']
+                ]
+            ]);
+        }
+
+        $asaasCustomerId = $order->customer_asaas_id;
+
+        try {
+            $creditCardData = $this->extractCreditCardData($data);
+            Log::channel('registration')->info('Tentando tokenizar cartão', [
+                'asaas_customer_id' => $asaasCustomerId,
+                'card_last4' => substr($creditCardData['number'], -4),
+                'holder' => $creditCardData['holderName'],
+            ]);
+
+            $creditCardInfo = $this->tokenizeCreditCard($asaasCustomerId, $creditCardData);
+
+            Log::channel('registration')->info('Cartão tokenizado com sucesso', [
+                'asaas_customer_id' => $asaasCustomerId,
+                'token' => $creditCardInfo['token'],
+                'brand' => $creditCardInfo['brand'],
+            ]);
+        } catch (\Exception $e) {
+            Log::channel('registration')->error('Falha na tokenização do cartão.', [
+                'asaas_customer_id' => $asaasCustomerId,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+
+        try {
+            $result = DB::transaction(function () use ($customer, $creditCardInfo, $asaasCustomerId, $order) {
+                if ($customer->credit_card_token) {
+                    $customer->creditCards()->create([
+                        'credit_card_token' => $customer->credit_card_token,
+                        'credit_card_brand' => $customer->credit_card_brand,
+                        'credit_card_number' => $customer->credit_card_number,
+                    ]);
+                }
+
+                $customer->update([
+                    'customer_id' => $asaasCustomerId,
+                    'credit_card_token' => $creditCardInfo['token'],
+                    'credit_card_brand' => $creditCardInfo['brand'],
+                    'credit_card_number' => $creditCardInfo['number'],
+                ]);
+
+                if ($order->subscription_asaas_id) {
+                    $adapter = new AsaasConnector();
+                    $gateway = new Gateway($adapter);
+
+                    $customerIp = $this->request->ip();
+                    $gateway->subscription()->updateCreditCard(
+                        $order->subscription_asaas_id,
+                        $creditCardInfo['token'],
+                        $customerIp
+                    );
+                } else {
+                    throw new \Exception('Assinatura não encontrada para atualização do cartão.');
+                }
+
+                return true;
+            });
+
+            Log::channel('registration')->info('Cartão e assinatura atualizados com sucesso');
+            return response()->json(['status' => 200, 'message' => 'Cartão atualizado com sucesso!']);
+        } catch (\Exception $e) {
+            Log::channel('registration')->error('Falha na atualização do cartão (transação revertida).', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Não foi possível atualizar o cartão. Tente novamente.',
+            ], 500);
+        }
+    }
+
+    private function extractCreditCardData(array $data): array
+    {
+        return [
+            'holderName' => $data['credit_card_name'],
+            'number' => $data['credit_card_number'],
+            'expiryMonth' => $data['credit_card_expiry_month'],
+            'expiryYear' => $data['credit_card_expiry_year'],
+            'ccv' => $data['credit_card_ccv'],
+            'ip' => $data['ip'] ?? request()->ip(),
+        ];
+    }
+
+    private function tokenizeCreditCard(string $asaasCustomerId, array $cardData): array
+    {
+        $adapter = new AsaasConnector();
+        $gateway = new Gateway($adapter);
+
+        $payload = [
+            'customer' => $asaasCustomerId,
+            'creditCard' => [
+                'holderName' => $cardData['holderName'],
+                'number' => $cardData['number'],
+                'expiryMonth' => $cardData['expiryMonth'],
+                'expiryYear' => $cardData['expiryYear'],
+                'ccv' => $cardData['ccv'],
+            ],
+            'remoteIp' => $cardData['ip'],
+        ];
+
+        $response = $gateway->creditCard()->tokenize($payload);
+
+        if (!isset($response['creditCardToken']) || isset($response['error'])) {
+            $error = $response['error']['errors'][0]['description'] ?? 'Erro ao tokenizar cartão';
+            Log::channel('registration')->info("Asaas - falha na tokenização: {$error}");
+            throw new \Exception($error);
+        }
+
+        return [
+            'token' => $response['creditCardToken'],
+            'brand' => $response['creditCardBrand'],
+            'number' => $response['creditCardNumber'],
+        ];
     }
 
     protected function updateSubscription(
