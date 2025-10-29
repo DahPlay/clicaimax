@@ -18,7 +18,7 @@
                             <div class="input-group">
                                 <input type="number" name="credit_card_number" id="card_number" class="form-control"
                                     placeholder="Informe o número do cartão" min="13" maxlength="19" required
-                                    value="5549132034668929">
+                                    value="">
                             </div>
                         </div>
 
@@ -26,7 +26,7 @@
                             <label for="card_name">Nome do titular do cartão *</label>
                             <div class="input-group mb-3">
                                 <input type="text" name="credit_card_name" id="card_name" class="form-control"
-                                    placeholder="Nome do titular do cartão" required value="teste151">
+                                    placeholder="Nome do titular do cartão" required value="">
                             </div>
                         </div>
 
@@ -35,7 +35,7 @@
                             <div class="input-group mb-3">
                                 <input type="text" name="credit_card_expiry_month" id="card_expiry_month"
                                     class="form-control form-group" placeholder="00" min="2" maxlength="2"
-                                    required value="05">
+                                    required value="">
                             </div>
                         </div>
 
@@ -44,7 +44,7 @@
                             <div class="input-group mb-3">
                                 <input type="text" name="credit_card_expiry_year" id="card_expiry_year"
                                     class="form-control form-group" placeholder="0000" minlength="4" maxlength="4"
-                                    required value="2027">
+                                    required value="">
                             </div>
                         </div>
 
@@ -53,7 +53,7 @@
                             <div class="input-group mb-3">
                                 <input type="text" name="credit_card_ccv" id="card_ccv"
                                     class="form-control form-group" placeholder="000" minlength="3" maxlength="4"
-                                    required value="123">
+                                    required value="">
                             </div>
                         </div>
                     </div>
