@@ -87,4 +87,16 @@ class Order extends Model
     {
         return $this->belongsTo(Plan::class);
     }
+
+    public function hasPlan(int $planId, int $customer_id): bool
+    {
+        $order = Order::where('customer_id', $customer_id)
+            ->where('plan_id', $planId)
+            ->get();
+
+        if ($order->count() > 0) {
+            return true;
+        }
+        return false;
+    }
 }
