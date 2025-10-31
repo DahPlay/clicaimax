@@ -468,6 +468,13 @@
                         </div>
                     </div>
 
+                    <div class="d-flex flex-row input-group mb-2 mt-4">
+                        <input type="checkbox" name="terms" id="terms" placeholder="000" minlength="3"
+                            maxlength="4" required="" value="">
+                        <span class="text-white ml-2">Aceitar termos e condições</span>
+                        <a href="https://saude.clicaimax.com.br/termo-de-uso/" class="ml-2">visualizar termo.</a>
+                    </div>
+
                     <div class="footer-links">
                         <a href="{{ route('login') }}">
                             <i class="fa fa-user-plus mr-2"></i> Já tenho conta

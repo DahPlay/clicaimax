@@ -43,6 +43,7 @@ class Order extends Model
         'deleted_date',
         'original_plan_value',
         'boleto_url',
+        'consent_id',
     ];
 
     protected function cycle(): Attribute
@@ -98,5 +99,10 @@ class Order extends Model
             return true;
         }
         return false;
+    }
+
+    public function consent()
+    {
+        return $this->belongsTo(UserConsent::class);
     }
 }

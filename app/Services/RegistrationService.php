@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Coupon;
 use App\Models\Package;
+use App\Models\UserConsent;
 use App\Services\PaymentGateway\Connectors\AsaasConnector;
 use App\Services\PaymentGateway\Gateway;
 use App\Services\YouCast\Customer\CustomerCreate;
@@ -73,8 +74,11 @@ class RegistrationService
             $customer = Customer::create($customerData);
             Log::channel('registration')->debug('Customer local criado', ['id' => $customer->id]);
 
-            $this->createUser($customer, $data['password']);
-            Log::channel('registration')->debug('User local criado', ['email' => $customer->email]);
+            $user = $this->createUser($customer, $data['password']);
+            Log::channel('registration')->debug('User local criado', ['email' => $user->id]);
+
+            $userConsent = $this->createUserConsent((int) $user->id);
+            Log::channel('registration')->debug('UserConsent local criado', ['email' => $userConsent->id]);
 
             if ($asaasCustomerId) {
                 $customer->update([
@@ -90,7 +94,7 @@ class RegistrationService
                 Log::channel('registration')->info('Customer YouCast criado', ['viewers_id' => $viewersId]);
 
                 Log::channel('registration')->debug('Criando pedido');
-                $order = $this->createOrder($customer, (int) $data['plan_id'], $data['coupon_id'] ?? null);
+                $order = $this->createOrder($customer, (int) $data['plan_id'], $data['coupon_id'] ?? null, (int) $userConsent->id);
                 Log::channel('registration')->debug('Pedido criado', ['order_id' => $order->id]);
 
                 Log::channel('registration')->debug('Criando assinatura no Asaas');
@@ -198,7 +202,7 @@ class RegistrationService
         ];
     }
 
-    private function createUser(Customer $customer, string $password): void
+    private function createUser(Customer $customer, string $password): User
     {
         $user = User::create([
             'name' => $customer->name,
@@ -209,6 +213,20 @@ class RegistrationService
         ]);
 
         $customer->update(['user_id' => $user->id]);
+
+        return $user;
+    }
+
+    private function createUserConsent(int $user_id): UserConsent
+    {
+        $consent = UserConsent::create([
+            'user_id' => $user_id,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'consented_at' => now(),
+        ]);
+
+        return $consent;
     }
 
     private function extractCreditCardData(array $data): array
@@ -281,7 +299,7 @@ class RegistrationService
         return $viewersId;
     }
 
-    private function createOrder(Customer $customer, int $planId, ?int $couponId): Order
+    private function createOrder(Customer $customer, int $planId, ?int $couponId, int $consent_id): Order
     {
         $plan = Plan::findOrFail($planId);
         $value = $plan->value;
@@ -313,6 +331,7 @@ class RegistrationService
             'billing_type' => 'CREDIT_CARD',
             'next_due_date' => now()->addDays($plan->free_for_days)->format('Y-m-d'),
             'original_plan_value' => $plan->value,
+            'consent_id' => $consent_id,
         ]);
 
         (new PlanCreateService($packagesToCreate, $customer->viewers_id))->createPlan();
