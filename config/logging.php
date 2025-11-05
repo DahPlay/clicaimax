@@ -141,6 +141,13 @@ return [
             'level' => 'debug',
             'days' => 7,
         ],
+
+        'plan_change' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/plan_change/plan_change.log'),
+            'level' => 'debug',
+            'days' => 7,
+        ],
     ],
 
 ];

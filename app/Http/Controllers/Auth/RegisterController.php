@@ -32,34 +32,6 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
-    public function validateCoupon(Request $request)
-    {
-        $couponName = $request->input('coupon');
-        $planId = $request->input('plan_id');
-
-        $plan = Plan::find($planId);
-        $coupon = $this->getCoupon($couponName);
-
-        if (!$coupon?->is_active || !$plan) {
-            return response()->json(['valid' => false, 'message' => 'Cupom inválido.']);
-        }
-
-        $discountedValue = $this->getDiscount($plan, $coupon);
-
-        $discountedValueFormat = number_format($discountedValue, 2, ',', '.');
-
-        if ($discountedValue > 0 && $discountedValue <= 5) {
-            return response()->json(['valid' => false, 'message' => "O valor final de R$$discountedValueFormat após o cupom ser aplicado não pode ser menor que R$5,00."]);
-        }
-
-        return response()->json([
-            'valid' => true,
-            'discounted_value' => number_format($discountedValue, 2, ',', '.'),
-            'raw_value' => $discountedValue,
-            'message' => 'Cupom aplicado com sucesso! Você pagará R$ ' . number_format($discountedValue, 2, ',', '.'),
-        ]);
-    }
-
     public function showRegistrationForm(int|string $planId = null)
     {
         $planId = $planId ?: '';

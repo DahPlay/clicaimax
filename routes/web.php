@@ -21,8 +21,8 @@ Auth::routes(['register' => false]);
 
 Route::get('/register/{planId?}', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
-Route::post('/validate-coupon', [RegisterController::class, 'validateCoupon'])
-    ->name('validateCoupon');
+Route::post('/validate-coupon', [CouponController::class, 'validateCoupon'])
+    ->name('validate.coupon');
 
 /*Route::get('/teste', function () {
     Model::withoutEvents(function () {
@@ -148,7 +148,7 @@ Route::middleware('auth')->name('panel.')->group(function () {
                 'title' => 'Lista de Clientes | ' . config('custom.project_name'),
             ])->middleware('can:admin');
 
-        Route::get('/users/loadDatatable', [UserController::class, 'loadDatatable'])->name('loadDatatable')->middleware('can:admin');;
+        Route::get('/users/loadDatatable', [UserController::class, 'loadDatatable'])->name('loadDatatable')->middleware('can:admin');
 
         Route::post('/users/store', [UserController::class, 'store'])
             ->name('store')->middleware('can:admin');
@@ -279,7 +279,7 @@ Route::middleware('auth')->name('panel.')->group(function () {
         Route::post('/coupons/store', [CouponController::class, 'store'])
             ->name('store');
 
-        Route::put('/coupons/update/{id}', [CouponController::class, 'update'])
+        Route::post('/coupons/update/{id}', [CouponController::class, 'update'])
             ->name('update');
 
         Route::delete('/coupons/destroy/{id}', [CouponController::class, 'destroy'])
