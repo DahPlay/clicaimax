@@ -180,7 +180,7 @@
                             <i class="fa fa-arrow-down ml-2 animate__animated animate__bounce"
                                 style=" color: {{ config('custom.text_color_acessar') }};"></i>
                         </div>
-                        <a href="{{ config('custom.portal_link') }}" target="_blank">
+                        <a href="http://clicaimax.com.br/" target="_blank">
                             <img src="{{ config('custom.logo_1') }}" style="width: 140px;"
                                 alt="{{ config('custom.project_name') }}">
                         </a>
@@ -226,9 +226,9 @@
                         </div>
                     </div>
                 </form>
-                {{-- Logo inferior alinhado à direita / central no mobile --}}
+
                 <div class="login-footer">
-                    <a href="{{ route('login') }}">
+                    <a href="http://clicaimax.com.br/">
                         <img src="{{ config('custom.logo_2') }}" alt="">
                     </a>
                 </div>

@@ -214,7 +214,7 @@
 
             <div class="card-body-register login-card-body">
                 <div class="login-logo">
-                    <a href="{{ route('login') }}">
+                    <a href="http://clicaimax.com.br/">
                         <img src="{{ config('custom.logo_1') }}" alt="">
                     </a>
                 </div>
@@ -479,7 +479,7 @@
                         <a href="{{ route('login') }}">
                             <i class="fa fa-user-plus mr-2"></i> Já tenho conta
                         </a>
-                        <a href="{{ url('/') }}">
+                        <a href="http://clicaimax.com.br/">
                             <i class="fa fa-home mr-2"></i> Voltar para Home
                         </a>
                     </div>
