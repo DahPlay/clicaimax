@@ -34,7 +34,7 @@
                     <div class="social-auth-links text-center mb-3">
                         <p style="color: {{ config('custom.text_color_conta') }};">
                             Voltar para
-                            <a href="{{ $baseUrl }}" style="color: {{ config('custom.text_color_cadastre') }};">Home</a>
+                            <a href="http://clicaimax.com.br/" style="color: {{ config('custom.text_color_cadastre') }};">Home</a>
                         </p>
                     </div>
                     <div class="d-flex justify-content-center">
@@ -87,7 +87,7 @@
         </div>
     </div>
     <div class="login-logo position-absolute">
-        <a href="{{ route('login') }}">
+        <a href="http://clicaimax.com.br/">
             <img src="{{ asset('Auth-Panel/dist/img/logo.svg') }}" alt="">
         </a>
     </div>

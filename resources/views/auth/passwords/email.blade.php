@@ -32,19 +32,19 @@
         <div class="social-auth-links text-center mb-3">
             <p style="color: {{ config('custom.text_color_conta') }};">
                 Voltar para
-                <a href="{{ $baseUrl }}" style="color: {{ config('custom.text_color_cadastre') }};">Home</a>
+                <a href="http://clicaimax.com.br/" style="color: {{ config('custom.text_color_cadastre') }};">Home</a>
             </p>
         </div>
 
         <div class="card-body d-flex flex-column login-card-body p-0">
-            <div class="card mb-5">
+            <div class="card">
                 <div class="card-body text-center">
                     <div class="d-flex justify-content-center">
                         <p style="color: {{ config('custom.text_color_recuperar') }};">Recuperar Senha</p>
                         <i class="fa fa-arrow-down ml-2 animate__animated animate__bounce"
                             style="color: {{ config('custom.text_color_recuperar') }};"></i>
                     </div>
-                    <a href="{{ config('custom.portal_link') }}" target="_blank">
+                    <a href="http://clicaimax.com.br/" target="_blank">
                         <img src="{{ config('custom.logo_1') }}" style="width: 140px;"
                             alt="{{ config('custom.project_name') }}">
                     </a>
@@ -77,7 +77,7 @@
     </div>
 
     <div class="login-logo position-absolute">
-        <a href="{{ route('login') }}">
+        <a href="http://clicaimax.com.br/">
             <img src="{{ config('custom.logo_2') }}" alt="">
         </a>
     </div>
