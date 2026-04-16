@@ -52,7 +52,13 @@ class RegisterController extends Controller
 
     protected function validator(array $data): ValidationValidator
     {
-        return Validator::make($data, [
+        $planId = $data['plan_id'] ?? null;
+        $isTelemedicinePlan = false;
+        if ($planId) {
+            $isTelemedicinePlan = (bool) Plan::where('id', $planId)->value('is_active_telemedicine');
+        }
+
+        $rules = [
             'id' => ['integer'],
             'name' => ['required', 'string'],
             'document' => ['required', new \App\Rules\Cpf()],
@@ -101,6 +107,33 @@ class RegisterController extends Controller
             'credit_card_expiry_month' => ['required', 'digits:2'],
             'credit_card_expiry_year' => ['required', 'digits:4'],
             'credit_card_ccv' => ['required'],
+        ];
+
+        if ($isTelemedicinePlan) {
+            $count = (int) ($data['dependents_count'] ?? 0);
+            $rules['dependents_count'] = ['required', 'integer', 'min:1', 'max:3'];
+
+            for ($i = 1; $i <= $count; $i++) {
+                $rules["dependents.$i.name"] = ['required', 'string', 'max:255'];
+                $rules["dependents.$i.birth_date"] = ['required', 'date', 'before:today'];
+                $rules["dependents.$i.email"] = ['required', 'email'];
+                $rules["dependents.$i.cpf"] = ['required', new \App\Rules\Cpf()];
+                $rules["dependents.$i.gender"] = ['required', 'in:M,F,O'];
+            }
+        }
+
+        return Validator::make($data, $rules, [
+            'dependents_count.required' => 'Selecione a quantidade de dependentes.',
+            'dependents_count.min' => 'Informe ao menos 1 dependente.',
+            'dependents_count.max' => 'Máximo de 3 dependentes.',
+            'dependents.*.name.required' => 'O nome do dependente é obrigatório.',
+            'dependents.*.birth_date.required' => 'A data de nascimento do dependente é obrigatória.',
+            'dependents.*.birth_date.before' => 'A data de nascimento do dependente deve ser anterior a hoje.',
+            'dependents.*.email.required' => 'O email do dependente é obrigatório.',
+            'dependents.*.email.email' => 'O email do dependente é inválido.',
+            'dependents.*.cpf.required' => 'O CPF do dependente é obrigatório.',
+            'dependents.*.gender.required' => 'O gênero do dependente é obrigatório.',
+            'dependents.*.gender.in' => 'O gênero do dependente é inválido.',
         ]);
     }
 
@@ -126,9 +159,6 @@ class RegisterController extends Controller
             'mobile',
             'email',
             'payment_asaas_id',
-            'cpf_dependente_1',
-            'cpf_dependente_2',
-            'cpf_dependente_3',
             'credit_card_name',
             'credit_card_number',
             'credit_card_expiry_month',
@@ -136,6 +166,27 @@ class RegisterController extends Controller
             'credit_card_ccv',
             'coupon',
         ]);
+
+        $count = (int) $request->input('dependents_count', 0);
+        $dependentsInput = (array) $request->input('dependents', []);
+        $dependents = [];
+        for ($i = 1; $i <= $count; $i++) {
+            if (!isset($dependentsInput[$i])) {
+                continue;
+            }
+            $dep = $dependentsInput[$i];
+            $dependents[] = [
+                'name' => $dep['name'] ?? null,
+                'birth_date' => $dep['birth_date'] ?? null,
+                'email' => $dep['email'] ?? null,
+                'cpf' => $dep['cpf'] ?? null,
+                'gender' => $dep['gender'] ?? null,
+            ];
+        }
+        $data['dependents'] = $dependents;
+        $data['cpf_dependente_1'] = $dependents[0]['cpf'] ?? null;
+        $data['cpf_dependente_2'] = $dependents[1]['cpf'] ?? null;
+        $data['cpf_dependente_3'] = $dependents[2]['cpf'] ?? null;
 
         $couponName = $request->input('coupon');
         $planId = $request->input('plan_id');

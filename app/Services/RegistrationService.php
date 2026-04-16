@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\CustomerDependent;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Plan;
@@ -73,6 +74,8 @@ class RegistrationService
 
             $customer = Customer::create($customerData);
             Log::channel('registration')->debug('Customer local criado', ['id' => $customer->id]);
+
+            $this->createDependents($customer, $data['dependents'] ?? []);
 
             $user = $this->createUser($customer, $data['password']);
             Log::channel('registration')->debug('User local criado', ['email' => $user->id]);
@@ -200,6 +203,33 @@ class RegistrationService
             'cpf_dependente_3' => $data['cpf_dependente_3'] ?? null,
             'coupon_id' => $data['coupon_id'] ?? null,
         ];
+    }
+
+    private function createDependents(Customer $customer, array $dependents): void
+    {
+        if (empty($dependents)) {
+            return;
+        }
+
+        foreach ($dependents as $dep) {
+            if (empty($dep['cpf']) || empty($dep['name'])) {
+                continue;
+            }
+
+            CustomerDependent::create([
+                'customer_id' => $customer->id,
+                'name' => $dep['name'],
+                'birth_date' => $dep['birth_date'],
+                'email' => $dep['email'],
+                'cpf' => $dep['cpf'],
+                'gender' => $dep['gender'],
+            ]);
+        }
+
+        Log::channel('registration')->info('Dependentes criados', [
+            'customer_id' => $customer->id,
+            'count' => count($dependents),
+        ]);
     }
 
     private function createUser(Customer $customer, string $password): User

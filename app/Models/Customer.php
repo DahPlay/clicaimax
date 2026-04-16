@@ -54,4 +54,9 @@ class Customer extends Model
     {
         return $this->hasMany(CustomerCreditCard::class);
     }
+
+    public function dependents(): HasMany
+    {
+        return $this->hasMany(CustomerDependent::class);
+    }
 }

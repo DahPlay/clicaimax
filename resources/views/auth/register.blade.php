@@ -193,6 +193,166 @@
         margin-right: 8px;
         color: {{ config('custom.button_color_entrar') }};
     }
+
+    /* Dependents step UX */
+    .dependents-intro {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .dependents-intro .title-input2 {
+        font-size: 16px;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .dependents-intro small {
+        opacity: .75;
+    }
+
+    .dependents-count-selector {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 25px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .dependent-count-card {
+        flex: 1 1 90px;
+        max-width: 130px;
+        padding: 18px 10px;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.04);
+        color: {{ config('custom.text_color_form') }};
+        user-select: none;
+    }
+
+    .dependent-count-card:hover {
+        border-color: {{ config('custom.button_color_entrar') }};
+        transform: translateY(-2px);
+    }
+
+    .dependent-count-card.active {
+        border-color: {{ config('custom.button_color_entrar') }};
+        background: {{ config('custom.button_color_entrar') }};
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .dependent-count-number {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .dependent-count-label {
+        font-size: 12px;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .dependent-card {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        animation: fadeInDep .25s ease;
+    }
+
+    @keyframes fadeInDep {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dependent-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dependent-card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: {{ config('custom.button_color_entrar') }};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        margin-right: 12px;
+    }
+
+    .dependent-card-title {
+        font-weight: 600;
+        margin: 0;
+        color: {{ config('custom.text_color_form') }};
+    }
+
+    .dependent-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    @media (max-width: 576px) {
+        .dependent-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .gender-options {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .gender-option {
+        flex: 1;
+        padding: 9px 4px;
+        border: 1.5px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: transparent;
+        color: {{ config('custom.text_color_form') }};
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .gender-option:hover {
+        border-color: {{ config('custom.button_color_entrar') }};
+    }
+
+    .gender-option.active {
+        border-color: {{ config('custom.button_color_entrar') }};
+        background: {{ config('custom.button_color_entrar') }};
+        color: #fff;
+    }
+
+    .dependents-empty {
+        text-align: center;
+        padding: 30px 15px;
+        opacity: .65;
+        font-size: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        margin-bottom: 18px;
+    }
+
+    .step[data-step="3"].step-hidden {
+        display: none;
+    }
 </style>
 
 @section('content')
@@ -232,12 +392,16 @@
                         <div class="step-number">2</div>
                         <div class="step-label">Dados Pessoais</div>
                     </div>
-                    <div class="step" data-step="3">
+                    <div class="step step-hidden" data-step="3">
                         <div class="step-number">3</div>
-                        <div class="step-label">Credenciais</div>
+                        <div class="step-label">Dependentes</div>
                     </div>
                     <div class="step" data-step="4">
                         <div class="step-number">4</div>
+                        <div class="step-label">Credenciais</div>
+                    </div>
+                    <div class="step" data-step="5">
+                        <div class="step-number">5</div>
                         <div class="step-label">Pagamento</div>
                     </div>
                 </div>
@@ -284,7 +448,7 @@
                         </div>
 
                         <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-next" data-next="2"
+                            <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
                     </div>
@@ -308,24 +472,6 @@
                             <input type="text" @error('document') has-error @enderror
                                 value="{{ old('document') ?? '' }}" name="document" id="document" class="form-control"
                                 placeholder="Digite seu cpf *" required>
-                        </div>
-
-                        <div id="dependentes-fields" style="display:none;">
-                            <div class="input-group mb-3">
-                                <label class="title-input2" for="cpf_dependente_1">CPF Dependente 1</label>
-                                <input type="text" name="cpf_dependente_1" id="cpf_dependente_1" class="form-control"
-                                    placeholder="Digite o CPF do seu 1° Dependente">
-                            </div>
-                            <div class="input-group mb-3">
-                                <label class="title-input2" for="cpf_dependente_2">CPF Dependente 2</label>
-                                <input type="text" name="cpf_dependente_2" id="cpf_dependente_2" class="form-control"
-                                    placeholder="Digite o CPF do seu 2° Dependente">
-                            </div>
-                            <div class="input-group mb-3">
-                                <label class="title-input2" for="cpf_dependente_3">CPF Dependente 3</label>
-                                <input type="text" name="cpf_dependente_3" id="cpf_dependente_3" class="form-control"
-                                    placeholder="Digite o CPF do seu 3° Dependente">
-                            </div>
                         </div>
 
                         @error('document')
@@ -358,15 +504,128 @@
                         @enderror
 
                         <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-back" data-prev="1"
+                            <button type="button" class="btn btn-nav btn-back"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
-                            <button type="button" class="btn btn-nav btn-next" data-next="3"
+                            <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
                     </div>
 
-                    <!-- Step 3: Credentials -->
-                    <div class="step-content" data-step-content="3">
+                    <!-- Step 3: Dependents (only when telemedicine plan) -->
+                    <div class="step-content" data-step-content="3" data-conditional="telemedicine">
+                        <div class="dependents-intro">
+                            <span class="title-input2">Quantos dependentes deseja cadastrar?</span>
+                            <small class="d-block">Selecione de 1 a 3 dependentes para incluir nos benefícios de
+                                telemedicina.</small>
+                        </div>
+
+                        <div class="dependents-count-selector">
+                            <div class="dependent-count-card" data-count="1">
+                                <div class="dependent-count-number">1</div>
+                                <div class="dependent-count-label">Dependente</div>
+                            </div>
+                            <div class="dependent-count-card" data-count="2">
+                                <div class="dependent-count-number">2</div>
+                                <div class="dependent-count-label">Dependentes</div>
+                            </div>
+                            <div class="dependent-count-card" data-count="3">
+                                <div class="dependent-count-number">3</div>
+                                <div class="dependent-count-label">Dependentes</div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="dependents_count" id="dependents_count"
+                            value="{{ old('dependents_count', 0) }}">
+
+                        <div id="dependents-empty-state" class="dependents-empty">
+                            Selecione acima a quantidade de dependentes para preencher os dados.
+                        </div>
+
+                        <div id="dependents-forms-container">
+                            @for ($i = 1; $i <= 3; $i++)
+                                <div class="dependent-card" data-dependent-index="{{ $i }}" style="display:none;">
+                                    <div class="dependent-card-header">
+                                        <div class="dependent-card-icon">{{ $i }}</div>
+                                        <h6 class="dependent-card-title">Dependente {{ $i }}</h6>
+                                    </div>
+
+                                    <div class="input-group mb-3">
+                                        <label class="title-input2" for="dependent_{{ $i }}_name">Nome
+                                            completo *</label>
+                                        <input type="text" name="dependents[{{ $i }}][name]"
+                                            id="dependent_{{ $i }}_name" class="form-control"
+                                            placeholder="Nome completo do dependente"
+                                            value="{{ old('dependents.' . $i . '.name') }}">
+                                    </div>
+
+                                    <div class="dependent-row">
+                                        <div class="input-group mb-3">
+                                            <label class="title-input2"
+                                                for="dependent_{{ $i }}_birth_date">Data de
+                                                nascimento *</label>
+                                            <input type="date" name="dependents[{{ $i }}][birth_date]"
+                                                id="dependent_{{ $i }}_birth_date" class="form-control"
+                                                value="{{ old('dependents.' . $i . '.birth_date') }}">
+                                        </div>
+                                        <div class="input-group mb-3">
+                                            <label class="title-input2" for="dependent_{{ $i }}_cpf">CPF
+                                                *</label>
+                                            <input type="text" name="dependents[{{ $i }}][cpf]"
+                                                id="dependent_{{ $i }}_cpf"
+                                                class="form-control dependent-cpf"
+                                                placeholder="000.000.000-00"
+                                                value="{{ old('dependents.' . $i . '.cpf') }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="input-group mb-3">
+                                        <label class="title-input2" for="dependent_{{ $i }}_email">Email
+                                            *</label>
+                                        <input type="email" name="dependents[{{ $i }}][email]"
+                                            id="dependent_{{ $i }}_email" class="form-control"
+                                            placeholder="email@exemplo.com"
+                                            value="{{ old('dependents.' . $i . '.email') }}">
+                                    </div>
+
+                                    <div class="input-group mb-3">
+                                        <label class="title-input2">Gênero *</label>
+                                        <div class="gender-options">
+                                            @php $oldGender = old('dependents.' . $i . '.gender'); @endphp
+                                            <button type="button"
+                                                class="gender-option {{ $oldGender === 'M' ? 'active' : '' }}"
+                                                data-gender="M"
+                                                data-target="dependent_{{ $i }}_gender">Masculino</button>
+                                            <button type="button"
+                                                class="gender-option {{ $oldGender === 'F' ? 'active' : '' }}"
+                                                data-gender="F"
+                                                data-target="dependent_{{ $i }}_gender">Feminino</button>
+                                            <button type="button"
+                                                class="gender-option {{ $oldGender === 'O' ? 'active' : '' }}"
+                                                data-gender="O"
+                                                data-target="dependent_{{ $i }}_gender">Outro</button>
+                                        </div>
+                                        <input type="hidden" name="dependents[{{ $i }}][gender]"
+                                            id="dependent_{{ $i }}_gender" value="{{ $oldGender }}">
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+
+                        @error('dependents')
+                            <span class="text-danger">{{ $message }}</span>
+                            <hr>
+                        @enderror
+
+                        <div class="navigation-buttons">
+                            <button type="button" class="btn btn-nav btn-back"
+                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
+                            <button type="button" class="btn btn-nav btn-next"
+                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Credentials -->
+                    <div class="step-content" data-step-content="4">
                         <div class="input-group mb-3">
                             <label class="title-input2" for="usuario">Digite seu usuário *</label>
                             <input type="text" name="login" id="usuario" class="form-control"
@@ -411,15 +670,15 @@
                         @endif
 
                         <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-back" data-prev="2"
+                            <button type="button" class="btn btn-nav btn-back"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
-                            <button type="button" class="btn btn-nav btn-next" data-next="4"
+                            <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
                     </div>
 
-                    <!-- Step 4: Payment -->
-                    <div class="step-content" data-step-content="4">
+                    <!-- Step 5: Payment -->
+                    <div class="step-content" data-step-content="5">
                         <div class="input-group mb-3">
                             <label class="title-input2" for="card_number">Número do cartão *</label>
                             <input type="number" name="credit_card_number" id="card_number" class="form-control"
@@ -467,7 +726,7 @@
                         </div>
 
                         <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-back" data-prev="3"
+                            <button type="button" class="btn btn-nav btn-back"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
                             <button type="submit" class="btn btn-nav btn-submit"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Finalizar
@@ -566,39 +825,43 @@
         $(function() {
             initSelects2();
             initMasks();
-            const $dependentesFields = $('#dependentes-fields');
+            initStepNavigation();
+            initDependentsUI();
 
             $('#plan_id').on('change', function() {
-                const planId = $(this).val();
-                const telemedicine = $(this).find(':selected').data('telemedicine');
-
-                // console.log('Plano selecionado ID:', planId);
-                // console.log('Is active telemedicine:', telemedicine);
-
-                if (telemedicine == 1) {
-                    $dependentesFields.show();
-                    $dependentesFields.show();
-                } else {
-                    $dependentesFields.hide();
-                    $dependentesFields.hide();
-                    // opcional: limpar os campos ao esconder
-                    $dependentesFields.find('input').val('');
-                    $dependentesFields.find('input').val('');
-                }
+                applyTelemedicineState();
             });
 
-            // Se o select já vier com valor selecionado ao carregar a página
-            const initialTelemedicine = $('#plan_id').find(':selected').data('telemedicine');
-            if (initialTelemedicine == 1) {
-                $dependentesFields.show();
-                $dependentesFields.show();
-            } else {
-                $dependentesFields.hide();
-                $dependentesFields.hide();
-            }
-            initStepNavigation();
-
+            applyTelemedicineState();
         });
+
+        function isTelemedicine() {
+            return $('#plan_id').find(':selected').data('telemedicine') == 1;
+        }
+
+        function getVisibleSteps() {
+            return isTelemedicine() ? [1, 2, 3, 4, 5] : [1, 2, 4, 5];
+        }
+
+        function applyTelemedicineState() {
+            const tele = isTelemedicine();
+            const $depStep = $('.step[data-step="3"]');
+
+            if (tele) {
+                $depStep.removeClass('step-hidden');
+            } else {
+                $depStep.addClass('step-hidden');
+                clearAllDependents();
+
+                if ($('.step-content[data-step-content="3"]').hasClass('active')) {
+                    navigateToStep(4);
+                }
+            }
+
+            // Recalculate progress for current visible step
+            const currentStep = parseInt($('.step-content.active').data('step-content')) || 1;
+            updateProgressBar(currentStep);
+        }
 
         function initSelects2() {
             $('#plan_id').select2({
@@ -609,38 +872,132 @@
 
         function initMasks() {
             $('#document').mask('000.000.000-00');
-            $('#cpf_dependente_1').mask('000.000.000-00');
-            $('#cpf_dependente_2').mask('000.000.000-00');
-            $('#cpf_dependente_3').mask('000.000.000-00');
             $('#mobile').mask('(00) 00000-0000');
+            $('.dependent-cpf').mask('000.000.000-00');
         }
 
         function initStepNavigation() {
             $('.btn-next').on('click', function() {
-                const nextStep = $(this).data('next');
-                navigateToStep(nextStep);
+                const currentStep = parseInt($(this).closest('.step-content').data('step-content'));
+                const visible = getVisibleSteps();
+                const idx = visible.indexOf(currentStep);
+                if (idx >= 0 && idx < visible.length - 1) {
+                    if (currentStep === 3 && !validateDependentsStep()) {
+                        return;
+                    }
+                    navigateToStep(visible[idx + 1]);
+                }
             });
 
             $('.btn-back').on('click', function() {
-                const prevStep = $(this).data('prev');
-                navigateToStep(prevStep);
+                const currentStep = parseInt($(this).closest('.step-content').data('step-content'));
+                const visible = getVisibleSteps();
+                const idx = visible.indexOf(currentStep);
+                if (idx > 0) {
+                    navigateToStep(visible[idx - 1]);
+                }
             });
         }
 
         function navigateToStep(stepNumber) {
-            // Hide all step contents
             $('.step-content').removeClass('active');
-
-            // Show current step content
             $(`.step-content[data-step-content="${stepNumber}"]`).addClass('active');
 
-            // Update progress bar
-            const progressPercentage = ((stepNumber - 1) / 3) * 100;
-            $('.step-progress-bar').css('width', progressPercentage + '%');
+            updateProgressBar(stepNumber);
 
-            // Update step indicators
             $('.step').removeClass('active');
             $(`.step[data-step="${stepNumber}"]`).addClass('active');
+
+            $('html, body').animate({ scrollTop: $('.card-register').offset().top - 20 }, 250);
+        }
+
+        function updateProgressBar(stepNumber) {
+            const visible = getVisibleSteps();
+            const idx = visible.indexOf(stepNumber);
+            const safeIdx = idx >= 0 ? idx : 0;
+            const progressPercentage = visible.length > 1 ? (safeIdx / (visible.length - 1)) * 100 : 0;
+            $('.step-progress-bar').css('width', progressPercentage + '%');
+        }
+
+        function initDependentsUI() {
+            $('.dependent-count-card').on('click', function() {
+                const count = parseInt($(this).data('count'));
+                setDependentCount(count);
+            });
+
+            $('.gender-option').on('click', function() {
+                const $btn = $(this);
+                const targetId = $btn.data('target');
+                const value = $btn.data('gender');
+
+                $btn.siblings('.gender-option').removeClass('active');
+                $btn.addClass('active');
+                $('#' + targetId).val(value);
+            });
+
+            // Restore state from old() input if any dependent has data
+            const oldCount = parseInt($('#dependents_count').val()) || 0;
+            if (oldCount > 0) {
+                setDependentCount(oldCount);
+            }
+        }
+
+        function setDependentCount(count) {
+            count = parseInt(count) || 0;
+            $('#dependents_count').val(count);
+
+            $('.dependent-count-card').removeClass('active');
+            $(`.dependent-count-card[data-count="${count}"]`).addClass('active');
+
+            $('#dependents-empty-state').toggle(count === 0);
+
+            $('.dependent-card').each(function() {
+                const $card = $(this);
+                const idx = parseInt($card.data('dependent-index'));
+                const $inputs = $card.find('input:not([type=hidden])');
+                if (idx <= count) {
+                    $card.show();
+                    $inputs.prop('required', true);
+                } else {
+                    $card.hide();
+                    $inputs.prop('required', false).val('');
+                    $card.find('input[type=hidden]').val('');
+                    $card.find('.gender-option').removeClass('active');
+                }
+            });
+        }
+
+        function clearAllDependents() {
+            setDependentCount(0);
+        }
+
+        function validateDependentsStep() {
+            const count = parseInt($('#dependents_count').val()) || 0;
+            if (count === 0) {
+                alert('Selecione a quantidade de dependentes para continuar.');
+                return false;
+            }
+
+            for (let i = 1; i <= count; i++) {
+                const $card = $(`.dependent-card[data-dependent-index="${i}"]`);
+                const name = $card.find(`#dependent_${i}_name`).val().trim();
+                const birth = $card.find(`#dependent_${i}_birth_date`).val();
+                const email = $card.find(`#dependent_${i}_email`).val().trim();
+                const cpf = $card.find(`#dependent_${i}_cpf`).val().trim();
+                const gender = $card.find(`#dependent_${i}_gender`).val();
+
+                if (!name || !birth || !email || !cpf || !gender) {
+                    alert(`Preencha todos os dados do Dependente ${i}.`);
+                    return false;
+                }
+
+                const cpfDigits = cpf.replace(/\D/g, '');
+                if (cpfDigits.length !== 11) {
+                    alert(`CPF do Dependente ${i} é inválido.`);
+                    return false;
+                }
+            }
+            return true;
         }
 
         function selectPlan(planId) {
