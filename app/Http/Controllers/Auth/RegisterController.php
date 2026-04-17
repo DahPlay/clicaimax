@@ -118,7 +118,7 @@ class RegisterController extends Controller
                 $rules["dependents.$i.birth_date"] = ['required', 'date', 'before:today'];
                 $rules["dependents.$i.email"] = ['required', 'email'];
                 $rules["dependents.$i.cpf"] = ['required', new \App\Rules\Cpf()];
-                $rules["dependents.$i.gender"] = ['required', 'in:M,F,O'];
+                $rules["dependents.$i.gender"] = ['required', 'in:M,F'];
             }
         }
 

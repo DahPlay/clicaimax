@@ -588,7 +588,7 @@
                                     </div>
 
                                     <div class="input-group mb-3">
-                                        <label class="title-input2">Gênero *</label>
+                                        <label class="title-input2">Gênero Biológico: *</label>
                                         <div class="gender-options">
                                             @php $oldGender = old('dependents.' . $i . '.gender'); @endphp
                                             <button type="button"
@@ -599,10 +599,6 @@
                                                 class="gender-option {{ $oldGender === 'F' ? 'active' : '' }}"
                                                 data-gender="F"
                                                 data-target="dependent_{{ $i }}_gender">Feminino</button>
-                                            <button type="button"
-                                                class="gender-option {{ $oldGender === 'O' ? 'active' : '' }}"
-                                                data-gender="O"
-                                                data-target="dependent_{{ $i }}_gender">Outro</button>
                                         </div>
                                         <input type="hidden" name="dependents[{{ $i }}][gender]"
                                             id="dependent_{{ $i }}_gender" value="{{ $oldGender }}">
