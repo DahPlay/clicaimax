@@ -114,6 +114,135 @@
             top: 10px;
             right: 10px;
         }
+
+        /* ==================================================== */
+        /* === Bloco 8: Estilo global unificado (tema verde) ===*/
+        /* ==================================================== */
+
+        /* ---- MODAIS ---- */
+        .modal-content {
+            border: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 12px 36px rgba(0,0,0,.18);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: #fff;
+            border-bottom: 0;
+            padding: 16px 22px;
+        }
+        .modal-header .modal-title { font-weight: 700; }
+        .modal-header .close,
+        .modal-header .close span { color: #fff; opacity: .9; text-shadow: none; }
+        .modal-header .close:hover { opacity: 1; }
+        .modal-body {
+            background: #fff;
+            padding: 22px 22px;
+        }
+        .modal-footer {
+            border-top: 1px solid #eef2e8;
+            padding: 14px 22px;
+            gap: 8px;
+        }
+        .modal-footer .btn {
+            border-radius: 999px;
+            padding: 7px 22px;
+            font-weight: 600;
+        }
+        .modal-footer .btn-primary {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            border: 0;
+        }
+        .modal-footer .btn-primary:hover { filter: brightness(1.05); }
+        .modal-footer .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+            border: 0;
+        }
+        .modal-footer .btn-secondary:hover { background: #dde0e3; color: #2c3e0f; }
+        .modal-footer .btn-danger {
+            background: linear-gradient(135deg, #ef5350, #c62828);
+            border: 0;
+        }
+
+        /* ---- DATATABLES ---- */
+        #table thead th {
+            background: #e8efd9 !important;
+            color: #2c3e0f !important;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            border-bottom: 2px solid #c9d6a8;
+            font-size: 12.5px;
+        }
+        #table tbody tr:hover {
+            background: #f3f8e8;
+        }
+        .dataTables_filter input {
+            border-radius: 999px !important;
+            border: 1.5px solid #b7d09c !important;
+            padding: 4px 14px !important;
+            outline: none;
+        }
+        .dataTables_filter input:focus {
+            border-color: #2e7d32 !important;
+            box-shadow: 0 0 0 .15rem rgba(46,125,50,.18);
+        }
+        .dataTables_length select {
+            border-radius: 999px !important;
+            border: 1.5px solid #b7d09c !important;
+            padding: 2px 24px 2px 12px !important;
+        }
+        .dataTables_paginate .paginate_button {
+            border-radius: 999px !important;
+            margin: 0 2px;
+        }
+        .dataTables_paginate .paginate_button.current,
+        .dataTables_paginate .paginate_button.current:hover {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20) !important;
+            border-color: #1b5e20 !important;
+            color: #fff !important;
+        }
+
+        /* Botões DT (Excel/PDF/Colvis) */
+        .dt-buttons .dt-button {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20) !important;
+            color: #fff !important;
+            border: 0 !important;
+            border-radius: 999px !important;
+            padding: 5px 16px !important;
+            margin-right: 6px;
+            font-weight: 600;
+            font-size: 12.5px;
+        }
+        .dt-buttons .dt-button:hover {
+            filter: brightness(1.08);
+            color: #fff !important;
+        }
+
+        /* Botão de ação inline (Bloco 7 — Ver Fatura e correlatos) */
+        .ap-btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            background: linear-gradient(135deg, #1b5e20, #0d4711);
+            color: #fff !important;
+            text-decoration: none !important;
+            transition: filter .15s ease, transform .15s ease;
+            border: 0;
+        }
+        .ap-btn-action:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            color: #fff !important;
+        }
     </style>
 
     @yield('headLocal')
