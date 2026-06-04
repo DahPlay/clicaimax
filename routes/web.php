@@ -24,6 +24,9 @@ Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/validate-coupon', [CouponController::class, 'validateCoupon'])
     ->name('validate.coupon');
 
+Route::post('/api/check-cpf', [App\Http\Controllers\Auth\RegisterController::class, 'checkCpf'])
+    ->name('check.cpf');
+
 /*Route::get('/teste', function () {
     Model::withoutEvents(function () {
         $developer = User::where('login', 'Developer')->first();

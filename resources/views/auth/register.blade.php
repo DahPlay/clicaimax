@@ -529,6 +529,74 @@
     @media (max-width: 575.98px) {
         .reg-plan-card { flex: 0 0 86vw; min-width: 86vw; }
     }
+
+    /* === Help text inline (hint embaixo do input) === */
+    .field-hint { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px; }
+
+    /* === Olho da senha === */
+    .input-eye-wrapper { position: relative; width: 100%; }
+    .input-eye-wrapper input { padding-right: 38px !important; }
+    .input-eye {
+        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+        background: transparent; border: 0; color: #6c757d; cursor: pointer; padding: 4px;
+    }
+    .input-eye:focus { outline: none; }
+
+    /* === Alerta âmbar inline por step === */
+    .step-alert {
+        background: rgba(255, 193, 7, .14);
+        border: 1px solid rgba(255, 193, 7, .55);
+        color: #ffd54f;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        margin-top: 14px;
+        display: none;
+        text-align: center;
+    }
+    .step-alert.show { display: block; }
+    .step-alert .step-alert-icon { color: #ffc107; margin-right: 6px; }
+    .step-alert strong { color: #fff; }
+
+    /* === Erros inline por campo === */
+    .field-error { color: #ff8a80; font-size: 12px; margin-top: 4px; min-height: 16px; }
+
+    /* === Step 5: pills de método de pagamento === */
+    .pay-method-pills {
+        display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px;
+    }
+    .pay-method-pill {
+        background: transparent;
+        border: 1.5px solid {{ config('custom.button_color_entrar') }};
+        color: {{ config('custom.text_color_form') }};
+        padding: 8px 18px; border-radius: 999px; cursor: pointer;
+        font-weight: 600; font-size: 13px;
+    }
+    .pay-method-pill.active {
+        background: {{ config('custom.button_color_entrar') }}; color: #fff;
+    }
+
+    /* === Step 5: linha MM/AAAA/CVV inline === */
+    .pay-card-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+    @media (max-width: 480px) {
+        .pay-card-row { grid-template-columns: 1fr 1fr; }
+    }
+    .pay-https-note { font-size: 12px; opacity: .75; text-align: center; margin-top: 6px; margin-bottom: 16px; }
+    .pay-method-info {
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12);
+        border-radius: 10px; padding: 16px; text-align: center; font-size: 14px; line-height: 1.6;
+    }
+    .pay-method-info strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* Header de seção dentro de step (ex: "Forma de pagamento") */
+    .step-section-title {
+        font-size: 22px; font-weight: 700; margin-bottom: 18px;
+        color: {{ config('custom.text_color_form') }};
+    }
 </style>
 
 @section('content')
@@ -599,10 +667,19 @@
 
                             <div class="reg-plan-track" id="regPlanTrack">
                                 @foreach ($plans as $plan)
+                                    @php
+                                        // Suporta `allowed_billing_types` (T7) como array ou CSV;
+                                        // fallback para o `billing_type` singular legado.
+                                        $abt = $plan->allowed_billing_types ?? null;
+                                        if (is_array($abt))   $abtCsv = implode(',', $abt);
+                                        elseif (is_string($abt) && $abt !== '') $abtCsv = $abt;
+                                        else                  $abtCsv = (string) ($plan->billing_type ?? 'CREDIT_CARD');
+                                    @endphp
                                     <div class="reg-plan-card {{ $plan->id == $planId ? 'selected' : '' }}"
                                          data-plan-id="{{ $plan->id }}"
                                          data-telemedicine="{{ $plan->is_active_telemedicine }}"
-                                         data-base-value="{{ $plan->value }}">
+                                         data-base-value="{{ $plan->value }}"
+                                         data-allowed-billing-types="{{ $abtCsv }}">
                                         @if ($plan->is_best_seller)
                                             <span class="reg-plan-badge">Mais vendido</span>
                                         @endif
@@ -640,6 +717,11 @@
                                 <button type="button" class="btn btn-nav btn-next"
                                     style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                             </div>
+
+                            <div class="step-alert" data-step-alert="1">
+                                <i class="fa fa-exclamation-triangle step-alert-icon"></i>
+                                <span>Para continuar, preencha: <strong class="step-alert-fields"></strong>.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -658,12 +740,13 @@
                             <hr>
                         @enderror
 
-                        <div class="input-group mb-3">
+                        <div class="input-group mb-1">
                             <label class="title-input2" for="document">CPF *</label>
                             <input type="text" @error('document') has-error @enderror
                                 value="{{ old('document') ?? '' }}" name="document" id="document" class="form-control"
                                 placeholder="Digite seu cpf *" required>
                         </div>
+                        <div class="field-error mb-3" data-error-for="document"></div>
 
                         @error('document')
                             <span class="text-danger">{{ $message }}</span>
@@ -699,6 +782,11 @@
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
                             <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
+                        </div>
+
+                        <div class="step-alert" data-step-alert="2">
+                            <i class="fa fa-exclamation-triangle step-alert-icon"></i>
+                            <span>Para continuar, preencha: <strong class="step-alert-fields"></strong>.</span>
                         </div>
                         </div>
                     </div>
@@ -760,7 +848,7 @@
                                                 id="dependent_{{ $i }}_birth_date" class="form-control"
                                                 value="{{ old('dependents.' . $i . '.birth_date') }}">
                                         </div>
-                                        <div class="input-group mb-3">
+                                        <div class="input-group mb-1">
                                             <label class="title-input2" for="dependent_{{ $i }}_cpf">CPF
                                                 *</label>
                                             <input type="text" name="dependents[{{ $i }}][cpf]"
@@ -768,6 +856,7 @@
                                                 class="form-control dependent-cpf"
                                                 placeholder="000.000.000-00"
                                                 value="{{ old('dependents.' . $i . '.cpf') }}">
+                                            <div class="field-error mt-1" data-error-for="dependent_{{ $i }}_cpf"></div>
                                         </div>
                                     </div>
 
@@ -811,120 +900,155 @@
                             <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
+
+                        <div class="step-alert" data-step-alert="3">
+                            <i class="fa fa-exclamation-triangle step-alert-icon"></i>
+                            <span>Para continuar, preencha: <strong class="step-alert-fields"></strong>.</span>
+                        </div>
                         </div>
                     </div>
 
                     <!-- Step 4: Credentials -->
                     <div class="step-content" data-step-content="4">
                         <div class="step-form-inner">
-                        <div class="input-group mb-3">
-                            <label class="title-input2" for="usuario">Digite seu usuário *</label>
-                            <input type="text" name="login" id="usuario" class="form-control"
-                                placeholder="Usuário *" required
-                                value="{{ old('login', session('customerData')['login'] ?? '') }}">
-                        </div>
+                            <div class="input-group mb-1">
+                                <label class="title-input2" for="usuario">Seu usuário
+                                    <small style="font-weight:400; opacity:.75;">(será o seu e-mail)</small>
+                                </label>
+                                <input type="text" name="login" id="usuario" class="form-control"
+                                       value="{{ old('login', session('customerData')['login'] ?? '') }}" required readonly>
+                            </div>
+                            <small class="field-hint mb-3 d-block">Para mudar, ajuste o e-mail no passo anterior.</small>
 
-                        @error('login')
-                            <span class="text-danger">{{ $message }}</span>
-                            <hr>
-                        @enderror
+                            @if (
+                                !session()->has('customerData') ||
+                                    (session()->has('customerData') && session('customerData')['source'] !== 'temporarily'))
+                                <div class="input-group mb-1">
+                                    <label class="title-input2" for="password">Crie sua senha *</label>
+                                    <div class="input-eye-wrapper">
+                                        <input type="password"
+                                               value="{{ session()->has('authenticate') ? session('customerData')['password'] : '' }}"
+                                               name="password" id="password" class="form-control"
+                                               placeholder="Crie uma senha forte" required minlength="6"
+                                               autocomplete="new-password"
+                                               {{ session()->has('authenticate') ? 'readonly' : '' }}>
+                                        <button type="button" class="input-eye" data-target="password" aria-label="Mostrar senha">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="field-error" data-error-for="password"></div>
 
-                        @if (
-                            !session()->has('customerData') ||
-                                (session()->has('customerData') && session('customerData')['source'] !== 'temporarily'))
-                            <div class="input-group mb-3">
-                                <label class="title-input2" for="password">Crie sua senha *</label>
-                                <input type="password" @error('password') has-error @enderror
-                                    value="{{ session()->has('authenticate') ? session('customerData')['password'] : '' }}"
-                                    name="password" id="password" class="form-control"
-                                    placeholder="Crie uma senha forte" required
-                                    {{ session()->has('authenticate') ? 'readonly' : '' }}>
+                                <div class="input-group mb-1 mt-3">
+                                    <label class="title-input2" for="password_confirmation">Confirmação de senha *</label>
+                                    <div class="input-eye-wrapper">
+                                        <input type="password" name="password_confirmation"
+                                               id="password_confirmation" class="form-control"
+                                               placeholder="Repita sua senha" required minlength="6"
+                                               autocomplete="new-password">
+                                        <button type="button" class="input-eye" data-target="password_confirmation" aria-label="Mostrar senha">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="field-error" data-error-for="password_confirmation"></div>
+                            @endif
+
+                            <div class="navigation-buttons mt-3">
+                                <button type="button" class="btn btn-nav btn-back"
+                                    style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
+                                <button type="button" class="btn btn-nav btn-next"
+                                    style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                             </div>
 
-                            @error('password')
-                                <span class="text-danger">{{ $message }}</span>
-                                <hr>
-                            @enderror
-
-                            <div class="input-group mb-3">
-                                <label class="title-input2" for="password_confirmation">Confirmação de senha *</label>
-                                <input type="password" @error('password_confirmation') has-error @enderror
-                                    value="{{ old('password_confirmation') ?? '' }}" name="password_confirmation"
-                                    id="password_confirmation" class="form-control" placeholder="Repita sua senha"
-                                    required>
+                            <div class="step-alert" data-step-alert="4">
+                                <i class="fa fa-exclamation-triangle step-alert-icon"></i>
+                                <span>Para continuar, preencha: <strong class="step-alert-fields"></strong>.</span>
                             </div>
-
-                            @error('password_confirmation')
-                                <span class="text-danger">{{ $message }}</span>
-                                <hr>
-                            @enderror
-                        @endif
-
-                        <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-back"
-                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
-                            <button type="button" class="btn btn-nav btn-next"
-                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
-                        </div>
                         </div>
                     </div>
 
                     <!-- Step 5: Payment -->
                     <div class="step-content" data-step-content="5">
                         <div class="step-form-inner">
-                        <div class="input-group mb-3">
-                            <label class="title-input2" for="card_number">Número do cartão *</label>
-                            <input type="number" name="credit_card_number" id="card_number" class="form-control"
-                                placeholder="Informe o número do cartão" min="13" maxlength="19" required
-                                value="{{ old('credit_card_number', session('customerData')['credit_card_number'] ?? '') }}">
-                        </div>
+                            <div class="step-section-title">Forma de pagamento</div>
 
-                        <div class="input-group mb-3">
-                            <label class="title-input2" for="card_name">Nome do titular do cartão *</label>
-                            <input type="text" name="credit_card_name" id="card_name" class="form-control"
-                                placeholder="Nome do titular do cartão" required
-                                value="{{ old('credit_card_name', session('customerData')['credit_card_name'] ?? '') }}">
-                        </div>
+                            <div class="pay-method-pills" id="payMethodPills">
+                                {{-- Pills geradas dinamicamente via JS conforme allowed_billing_types do plano selecionado. --}}
+                            </div>
 
-                        <div class="input-group mb-3">
-                            <label class="title-input2" for="card_expiry_month">Mês *</label>
-                            <input type="text" name="credit_card_expiry_month" id="card_expiry_month"
-                                class="form-control form-group" placeholder="00" min="2" maxlength="2" required
-                                value="{{ old('credit_card_expiry_month', session('customerData')['credit_card_expiry_month'] ?? '') }}">
+                            <input type="hidden" name="billing_type" id="billing_type" value="CREDIT_CARD">
 
-                            <label class="title-input2" for="card_expiry_year">Ano *</label>
-                            <input type="text" name="credit_card_expiry_year" id="card_expiry_year"
-                                class="form-control form-group" placeholder="0000" minlength="4" maxlength="4"
-                                required
-                                value="{{ old('credit_card_expiry_year', session('customerData')['credit_card_expiry_year'] ?? '') }}">
-                        </div>
+                            {{-- Bloco de cartão de crédito (default) --}}
+                            <div data-pay-block="CREDIT_CARD">
+                                <div class="input-group mb-3">
+                                    <input type="text" name="credit_card_name" id="card_name" class="form-control"
+                                           placeholder="Nome impresso no cartão *"
+                                           value="{{ old('credit_card_name', session('customerData')['credit_card_name'] ?? '') }}">
+                                </div>
+                                <div class="field-error" data-error-for="credit_card_name"></div>
 
-                        <div class="input-group mb-3">
-                            <label class="title-input2" for="card_ccv">CVV *</label>
-                            <input type="text" name="credit_card_ccv" id="card_ccv" class="form-control form-group"
-                                placeholder="000" minlength="3" maxlength="4" required
-                                value="{{ old('credit_card_ccv', session('customerData')['credit_card_ccv'] ?? '') }}">
-                        </div>
+                                <div class="input-group mb-3 mt-2">
+                                    <input type="text" inputmode="numeric" name="credit_card_number" id="card_number"
+                                           class="form-control" placeholder="Número do cartão *" maxlength="19"
+                                           value="{{ old('credit_card_number', session('customerData')['credit_card_number'] ?? '') }}">
+                                </div>
+                                <div class="field-error" data-error-for="credit_card_number"></div>
 
-                        @error('login')
-                            <span class="text-danger">{{ $message }}</span>
-                            <hr>
-                        @enderror
+                                <div class="pay-card-row mt-2">
+                                    <input type="text" inputmode="numeric" name="credit_card_expiry_month" id="card_expiry_month"
+                                           class="form-control" placeholder="MM *" maxlength="2"
+                                           value="{{ old('credit_card_expiry_month', session('customerData')['credit_card_expiry_month'] ?? '') }}">
+                                    <input type="text" inputmode="numeric" name="credit_card_expiry_year" id="card_expiry_year"
+                                           class="form-control" placeholder="AAAA *" maxlength="4"
+                                           value="{{ old('credit_card_expiry_year', session('customerData')['credit_card_expiry_year'] ?? '') }}">
+                                    <input type="text" inputmode="numeric" name="credit_card_ccv" id="card_ccv"
+                                           class="form-control" placeholder="CVV *" maxlength="4"
+                                           value="{{ old('credit_card_ccv', session('customerData')['credit_card_ccv'] ?? '') }}">
+                                </div>
+                                <div class="field-error" data-error-for="credit_card_expiry"></div>
 
-                        <div class="d-flex flex-row input-group mb-2 mt-4">
-                            <input type="checkbox" name="terms" id="terms" placeholder="000" minlength="3"
-                                maxlength="4" required="" value="">
-                            <span class="text-white ml-2">Aceitar termos e condições</span>
-                            <a href="https://saude.clicaimax.com.br/termo-de-uso/" class="ml-2">visualizar termo.</a>
-                        </div>
+                                <p class="pay-https-note mt-3 mb-0">
+                                    Não armazenamos dados do cartão — eles vão direto pra Asaas via HTTPS.
+                                </p>
+                            </div>
 
-                        <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-back"
-                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
-                            <button type="submit" class="btn btn-nav btn-submit"
-                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Finalizar
-                                Cadastro</button>
-                        </div>
+                            {{-- Bloco PIX --}}
+                            <div data-pay-block="PIX" style="display:none;">
+                                <div class="pay-method-info">
+                                    <strong><i class="fa fa-qrcode mr-2"></i>Pagamento via PIX</strong>
+                                    Após finalizar o cadastro, você receberá um QR Code e código copia-e-cola para
+                                    concluir o pagamento. Sua assinatura é ativada assim que o pagamento for confirmado.
+                                </div>
+                            </div>
+
+                            {{-- Bloco BOLETO --}}
+                            <div data-pay-block="BOLETO" style="display:none;">
+                                <div class="pay-method-info">
+                                    <strong><i class="fa fa-barcode mr-2"></i>Pagamento via Boleto</strong>
+                                    Após finalizar o cadastro, você receberá o link do boleto. A compensação pode levar
+                                    até 3 dias úteis após o pagamento.
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-row input-group mb-2 mt-4">
+                                <input type="checkbox" name="terms" id="terms" required="" value="">
+                                <span class="text-white ml-2">Aceitar termos e condições</span>
+                                <a href="https://saude.clicaimax.com.br/termo-de-uso/" class="ml-2">visualizar termo.</a>
+                            </div>
+
+                            <div class="navigation-buttons">
+                                <button type="button" class="btn btn-nav btn-back"
+                                    style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Voltar</button>
+                                <button type="submit" class="btn btn-nav btn-submit"
+                                    style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Finalizar
+                                    Cadastro</button>
+                            </div>
+
+                            <div class="step-alert" data-step-alert="5">
+                                <i class="fa fa-exclamation-triangle step-alert-icon"></i>
+                                <span>Para continuar, preencha: <strong class="step-alert-fields"></strong>.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -972,12 +1096,21 @@
 
 @section('javascriptLocal')
     <script>
+        // === Estado global compartilhado ===
+        const cpfDuplicateCache = new Map(); // cpfDigits -> bool
+        const cpfPending = new Map();        // cpfDigits -> Promise
+        const CSRF = '{{ csrf_token() }}';
+
         $(function() {
             initMasks();
             initStepNavigation();
             initDependentsUI();
             initPlanCards();
             initPlanArrows();
+            initPasswordEye();
+            initPasswordMatchLive();
+            initCpfBlurCheck();
+            initPayMethods();
 
             applyTelemedicineState();
         });
@@ -1048,19 +1181,26 @@
         }
 
         function initStepNavigation() {
-            $('.btn-next').on('click', function() {
+            $('.btn-next').on('click', async function() {
                 const currentStep = parseInt($(this).closest('.step-content').data('step-content'));
                 const visible = getVisibleSteps();
                 const idx = visible.indexOf(currentStep);
-                if (idx >= 0 && idx < visible.length - 1) {
-                    if (currentStep === 1 && !$('#plan_id').val()) {
-                        alert('Selecione um plano para continuar.');
-                        return;
-                    }
-                    if (currentStep === 3 && !validateDependentsStep()) {
-                        return;
-                    }
-                    navigateToStep(visible[idx + 1]);
+                if (idx < 0 || idx >= visible.length - 1) return;
+
+                const missing = await validateStep(currentStep);
+                renderStepAlert(currentStep, missing);
+                if (missing.length) return;
+
+                navigateToStep(visible[idx + 1]);
+            });
+
+            // Submit do form (Step 5)
+            $('#registerForm').on('submit', async function (e) {
+                const missing = await validateStep(5);
+                renderStepAlert(5, missing);
+                if (missing.length) {
+                    e.preventDefault();
+                    return false;
                 }
             });
 
@@ -1083,7 +1223,270 @@
             $('.step').removeClass('active');
             $(`.step[data-step="${stepNumber}"]`).addClass('active');
 
+            // Auto-populate o usuario com o email ao entrar no Step 4
+            if (stepNumber === 4) {
+                const email = ($('#email').val() || '').trim();
+                if (email) {
+                    $('#usuario').val(email);
+                }
+            }
+
+            // Atualiza pills de pagamento ao entrar no Step 5
+            if (stepNumber === 5) {
+                refreshPayMethods();
+            }
+
+            // Ao sair de um step, esconde o alerta dele
+            $('.step-alert').removeClass('show');
+
             $('html, body').animate({ scrollTop: $('.card-register').offset().top - 20 }, 250);
+        }
+
+        // ====== VALIDAÇÃO POR STEP ======
+
+        async function validateStep(step) {
+            const missing = [];
+
+            if (step === 1) {
+                if (!$('#plan_id').val()) missing.push('Plano');
+            }
+
+            if (step === 2) {
+                if (!$('#name').val().trim()) missing.push('Nome');
+                const doc = $('#document').val().trim();
+                if (!doc) {
+                    missing.push('CPF');
+                } else if (!isValidCPF(doc)) {
+                    missing.push('CPF (inválido)');
+                    setFieldError('document', 'CPF inválido.');
+                } else {
+                    const dupe = await isCpfDuplicate(doc);
+                    if (dupe) {
+                        missing.push('CPF (já cadastrado)');
+                        setFieldError('document', 'Este CPF já está cadastrado.');
+                    } else {
+                        setFieldError('document', '');
+                    }
+                }
+                const mobile = $('#mobile').val().trim();
+                if (!mobile || mobile.replace(/\D/g, '').length < 10) missing.push('Celular');
+                const email = $('#email').val().trim();
+                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) missing.push('E-mail');
+            }
+
+            if (step === 3) {
+                const count = parseInt($('#dependents_count').val()) || 0;
+                if (count === 0) {
+                    missing.push('Quantidade de dependentes');
+                }
+                for (let i = 1; i <= count; i++) {
+                    const $card = $(`.dependent-card[data-dependent-index="${i}"]`);
+                    const name   = $card.find(`#dependent_${i}_name`).val().trim();
+                    const birth  = $card.find(`#dependent_${i}_birth_date`).val();
+                    const email  = $card.find(`#dependent_${i}_email`).val().trim();
+                    const cpf    = $card.find(`#dependent_${i}_cpf`).val().trim();
+                    const gender = $card.find(`#dependent_${i}_gender`).val();
+
+                    if (!name || !birth || !email || !cpf || !gender) {
+                        missing.push(`Dados do Dependente ${i}`);
+                        continue;
+                    }
+                    if (!isValidCPF(cpf)) {
+                        missing.push(`CPF do Dependente ${i} (inválido)`);
+                        continue;
+                    }
+                    const dupe = await isCpfDuplicate(cpf);
+                    if (dupe) {
+                        missing.push(`CPF do Dependente ${i} (já cadastrado)`);
+                    }
+                }
+            }
+
+            if (step === 4) {
+                // login auto-populado, só validamos senha
+                const hasPwdBlock = $('#password').length > 0;
+                if (hasPwdBlock) {
+                    const p1 = $('#password').val();
+                    const p2 = $('#password_confirmation').val();
+                    if (!p1 || p1.length < 6) {
+                        missing.push('senha');
+                        setFieldError('password', 'A senha precisa ter no mínimo 6 caracteres.');
+                    } else {
+                        setFieldError('password', '');
+                    }
+                    if (!p2) {
+                        missing.push('confirmação de senha');
+                        setFieldError('password_confirmation', 'Confirme a senha.');
+                    } else if (p1 && p1 !== p2) {
+                        missing.push('confirmação de senha');
+                        setFieldError('password_confirmation', 'As senhas não coincidem.');
+                    } else {
+                        setFieldError('password_confirmation', '');
+                    }
+                }
+            }
+
+            if (step === 5) {
+                const billing = $('#billing_type').val();
+                if (!billing) missing.push('Forma de pagamento');
+                if (billing === 'CREDIT_CARD') {
+                    if (!$('#card_name').val().trim()) missing.push('Nome no cartão');
+                    const num = $('#card_number').val().replace(/\D/g, '');
+                    if (!num || num.length < 13) missing.push('Número do cartão');
+                    const mm = $('#card_expiry_month').val().trim();
+                    if (!mm || parseInt(mm) < 1 || parseInt(mm) > 12) missing.push('Mês de validade');
+                    const yy = $('#card_expiry_year').val().trim();
+                    if (!yy || yy.length !== 4) missing.push('Ano de validade');
+                    const cvv = $('#card_ccv').val().trim();
+                    if (!cvv || cvv.length < 3) missing.push('CVV');
+                }
+                if (!$('#terms').is(':checked')) missing.push('aceite dos termos');
+            }
+
+            return missing;
+        }
+
+        function renderStepAlert(step, missing) {
+            const $alert = $(`.step-alert[data-step-alert="${step}"]`);
+            if (!$alert.length) return;
+            if (!missing.length) {
+                $alert.removeClass('show');
+                return;
+            }
+            $alert.find('.step-alert-fields').text(missing.join(', '));
+            $alert.addClass('show');
+        }
+
+        function setFieldError(inputId, msg) {
+            $(`.field-error[data-error-for="${inputId}"]`).text(msg || '');
+        }
+
+        // ====== OLHO DE SENHA ======
+        function initPasswordEye() {
+            $(document).on('click', '.input-eye', function () {
+                const target = $(this).data('target');
+                const $input = $('#' + target);
+                if (!$input.length) return;
+                const isPwd = $input.attr('type') === 'password';
+                $input.attr('type', isPwd ? 'text' : 'password');
+                $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+            });
+        }
+
+        // ====== MATCH DE SENHAS AO VIVO ======
+        function initPasswordMatchLive() {
+            $(document).on('input', '#password, #password_confirmation', function () {
+                const p1 = $('#password').val();
+                const p2 = $('#password_confirmation').val();
+                if (p1 && p1.length < 6) {
+                    setFieldError('password', 'Mínimo 6 caracteres.');
+                } else {
+                    setFieldError('password', '');
+                }
+                if (p2 && p1 !== p2) {
+                    setFieldError('password_confirmation', 'As senhas não coincidem.');
+                } else {
+                    setFieldError('password_confirmation', '');
+                }
+            });
+        }
+
+        // ====== CPF: algoritmo + cache + AJAX ======
+        function isValidCPF(cpf) {
+            cpf = String(cpf || '').replace(/\D/g, '');
+            if (cpf.length !== 11) return false;
+            if (/^(\d)\1{10}$/.test(cpf)) return false;
+            let sum = 0;
+            for (let i = 0; i < 9; i++) sum += parseInt(cpf.charAt(i)) * (10 - i);
+            let d1 = 11 - (sum % 11); if (d1 >= 10) d1 = 0;
+            if (d1 !== parseInt(cpf.charAt(9))) return false;
+            sum = 0;
+            for (let i = 0; i < 10; i++) sum += parseInt(cpf.charAt(i)) * (11 - i);
+            let d2 = 11 - (sum % 11); if (d2 >= 10) d2 = 0;
+            if (d2 !== parseInt(cpf.charAt(10))) return false;
+            return true;
+        }
+
+        async function isCpfDuplicate(cpf) {
+            const digits = String(cpf || '').replace(/\D/g, '');
+            if (digits.length !== 11) return false;
+            if (cpfDuplicateCache.has(digits)) return cpfDuplicateCache.get(digits);
+            if (cpfPending.has(digits)) return cpfPending.get(digits);
+
+            const p = fetch('/api/check-cpf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': CSRF
+                },
+                body: JSON.stringify({ cpf: digits })
+            })
+            .then(r => r.ok ? r.json() : { exists: false })
+            .then(d => {
+                const exists = !!(d && d.exists);
+                cpfDuplicateCache.set(digits, exists);
+                cpfPending.delete(digits);
+                return exists;
+            })
+            .catch(() => {
+                cpfPending.delete(digits);
+                return false;
+            });
+
+            cpfPending.set(digits, p);
+            return p;
+        }
+
+        function initCpfBlurCheck() {
+            $(document).on('blur', '#document, .dependent-cpf', async function () {
+                const $el = $(this);
+                const val = $el.val().trim();
+                if (!val) return;
+                if (!isValidCPF(val)) {
+                    const inputId = $el.attr('id');
+                    setFieldError(inputId, 'CPF inválido.');
+                    return;
+                }
+                const dupe = await isCpfDuplicate(val);
+                const inputId = $el.attr('id');
+                setFieldError(inputId, dupe ? 'Este CPF já está cadastrado.' : '');
+            });
+        }
+
+        // ====== PILLS DE PAGAMENTO (Step 5) ======
+        function getAllowedBillingTypes() {
+            const $selected = $('.reg-plan-card.selected').first();
+            if (!$selected.length) return ['CREDIT_CARD'];
+            const raw = ($selected.data('allowed-billing-types') || 'CREDIT_CARD').toString();
+            return raw.split(',').map(s => s.trim()).filter(Boolean);
+        }
+
+        function initPayMethods() {
+            $(document).on('click', '.pay-method-pill', function () {
+                const method = $(this).data('method');
+                $('.pay-method-pill').removeClass('active');
+                $(this).addClass('active');
+                $('#billing_type').val(method);
+                $('[data-pay-block]').hide();
+                $(`[data-pay-block="${method}"]`).show();
+            });
+        }
+
+        function refreshPayMethods() {
+            const labels = { CREDIT_CARD: '<i class="fa fa-credit-card mr-2"></i>Cartão de crédito',
+                             PIX:         '<i class="fa fa-qrcode mr-2"></i>PIX',
+                             BOLETO:      '<i class="fa fa-barcode mr-2"></i>Boleto' };
+            const allowed = getAllowedBillingTypes();
+            const $pills = $('#payMethodPills').empty();
+            allowed.forEach((m, i) => {
+                const html = labels[m] || m;
+                $pills.append(`<button type="button" class="pay-method-pill ${i === 0 ? 'active' : ''}" data-method="${m}">${html}</button>`);
+            });
+            const initial = allowed[0] || 'CREDIT_CARD';
+            $('#billing_type').val(initial);
+            $('[data-pay-block]').hide();
+            $(`[data-pay-block="${initial}"]`).show();
         }
 
         function updateProgressBar(stepNumber) {

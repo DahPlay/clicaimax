@@ -36,9 +36,12 @@ class RegisterController extends Controller
     {
         $planId = $planId ?: '';
 
-        $plans = Plan::select(['id', 'name', 'value', 'is_active_telemedicine'])
+        // Carrega plan inteiro (allowed_billing_types entra automaticamente quando a coluna existir — T7).
+        $plans = Plan::with('benefits:id,plan_id,description')
             ->where('is_active', 1)
+            ->orderBy('priority')
             ->get();
+
         $data = Plan::getPlansData();
 
         return view('auth.register', [
@@ -48,6 +51,26 @@ class RegisterController extends Controller
             'plansByCycle' => $data['plansByCycle'],
             'activeCycle' => $data['activeCycle']
         ]);
+    }
+
+    /**
+     * Verifica se o CPF já existe em customers.document ou cpf_dependente_*.
+     */
+    public function checkCpf(Request $request)
+    {
+        $cpf = preg_replace('/\D/', '', (string) $request->input('cpf', ''));
+
+        if (strlen($cpf) !== 11) {
+            return response()->json(['exists' => false]);
+        }
+
+        $exists = Customer::where('document', $cpf)
+            ->orWhere('cpf_dependente_1', $cpf)
+            ->orWhere('cpf_dependente_2', $cpf)
+            ->orWhere('cpf_dependente_3', $cpf)
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
     }
 
     protected function validator(array $data): ValidationValidator
