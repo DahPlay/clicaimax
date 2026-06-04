@@ -86,24 +86,45 @@ class MainController extends Controller
 
         $ordersInPeriod = Order::query()->tap($applyFilters)->count();
 
+        // KPIs principais do topo (4 cards)
+        $activeSubscriptions = Order::query()
+            ->whereRaw('UPPER(TRIM(COALESCE(status, ""))) IN ("ACTIVE","ACTIVATED")')
+            ->count();
+        $systemUsers = $usersTotal;
+        $activePlans = Plan::where('is_active', 1)->count();
+
         // === Charts ===
-        // 1) Receita mensal (últimos 12 meses)
-        $start12m = Carbon::now()->startOfMonth()->subMonths(11);
-        $monthlyRevenue = Order::query()
-            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as ym, SUM(value) as total')
-            ->whereRaw('UPPER(TRIM(payment_status)) = "RECEIVED"')
-            ->whereDate('created_at', '>=', $start12m->toDateString())
+        // 1) Receita mensal por status (Recebido / Pendente / Vencido) — usa o período do filtro.
+        $monthlyAgg = Order::query()
+            ->selectRaw('
+                DATE_FORMAT(created_at, "%Y-%m") as ym,
+                SUM(CASE WHEN UPPER(TRIM(payment_status)) = "RECEIVED" THEN value ELSE 0 END) as received,
+                SUM(CASE WHEN UPPER(TRIM(payment_status)) = "PENDING"  THEN value ELSE 0 END) as pending,
+                SUM(CASE WHEN UPPER(TRIM(payment_status)) = "OVERDUE"  THEN value ELSE 0 END) as overdue
+            ')
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
             ->groupBy('ym')
             ->orderBy('ym')
-            ->pluck('total', 'ym');
+            ->get()
+            ->keyBy('ym');
 
-        $chartRevenueLabels = [];
-        $chartRevenueData   = [];
-        for ($i = 0; $i < 12; $i++) {
-            $m = $start12m->copy()->addMonths($i);
+        $fromC = Carbon::parse($from)->startOfMonth();
+        $toC   = Carbon::parse($to)->startOfMonth();
+        $monthsCount = max(1, $fromC->diffInMonths($toC) + 1);
+
+        $chartRevenueLabels   = [];
+        $chartReceivedData    = [];
+        $chartPendingData     = [];
+        $chartOverdueData     = [];
+        for ($i = 0; $i < $monthsCount; $i++) {
+            $m   = $fromC->copy()->addMonths($i);
             $key = $m->format('Y-m');
+            $row = $monthlyAgg[$key] ?? null;
             $chartRevenueLabels[] = $m->translatedFormat('M/y');
-            $chartRevenueData[]   = (float) ($monthlyRevenue[$key] ?? 0);
+            $chartReceivedData[]  = (float) ($row->received ?? 0);
+            $chartPendingData[]   = (float) ($row->pending  ?? 0);
+            $chartOverdueData[]   = (float) ($row->overdue  ?? 0);
         }
 
         // 2) Top planos (por receita RECEIVED no período do filtro)
@@ -198,9 +219,16 @@ class MainController extends Controller
             'customersTotal'    => $customersTotal,
             'ordersInPeriod'    => $ordersInPeriod,
 
+            // KPIs principais do topo (4 cards estilo bandeira)
+            'activeSubscriptions' => $activeSubscriptions,
+            'systemUsers'         => $systemUsers,
+            'activePlans'         => $activePlans,
+
             // Charts
             'chartRevenueLabels'   => $chartRevenueLabels,
-            'chartRevenueData'     => $chartRevenueData,
+            'chartReceivedData'    => $chartReceivedData,
+            'chartPendingData'     => $chartPendingData,
+            'chartOverdueData'     => $chartOverdueData,
             'chartTopPlansLabels'  => $chartTopPlansLabels,
             'chartTopPlansData'    => $chartTopPlansData,
             'chartBillingLabels'   => $chartBillingLabels,
