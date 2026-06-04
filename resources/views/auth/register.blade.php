@@ -353,6 +353,182 @@
     .step[data-step="3"].step-hidden {
         display: none;
     }
+
+    /* === Container do registro: ampliar pra caber 3 cards (Bloco 1) === */
+    .register-box { max-width: 1100px !important; margin: 0 auto !important; }
+    .card-register { max-width: 1100px !important; }
+    .card-body-register { max-width: 100% !important; padding: 32px 28px !important; }
+    @media (max-width: 1100px) {
+        .register-box, .card-register { max-width: 96vw !important; }
+    }
+    @media (max-width: 575.98px) {
+        .card-body-register { padding: 24px 16px !important; }
+    }
+
+    /* Steps 2/3/4/5 voltam pra largura confortável de formulário */
+    .step-content .step-form-inner {
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    /* === Trilho de planos (Step 1) === */
+    .reg-plan-section {
+        position: relative;
+        margin-bottom: 18px;
+    }
+
+    .reg-plan-track {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 14px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        justify-content: safe center;
+        padding: 6px 4px 14px;
+        scrollbar-width: thin;
+    }
+
+    .reg-plan-track::-webkit-scrollbar { height: 6px; }
+    .reg-plan-track::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,.25);
+        border-radius: 4px;
+    }
+
+    .reg-plan-card {
+        flex: 0 0 200px;
+        min-width: 200px;
+        scroll-snap-align: center;
+        border: 2px solid rgba(255,255,255,.18);
+        border-radius: 14px;
+        background: rgba(255,255,255,.04);
+        padding: 18px 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        position: relative;
+        color: {{ config('custom.text_color_form') }};
+    }
+
+    .reg-plan-card:hover {
+        border-color: {{ config('custom.button_color_entrar') }};
+        transform: translateY(-3px);
+    }
+
+    .reg-plan-card.selected {
+        border-color: {{ config('custom.button_color_entrar') }};
+        background: rgba(255,255,255,.08);
+        box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    }
+
+    .reg-plan-card .reg-plan-badge {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: {{ config('custom.button_color_entrar') }};
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        letter-spacing: .3px;
+    }
+
+    .reg-plan-card .reg-plan-name {
+        font-weight: 700;
+        font-size: 15px;
+        margin-bottom: 8px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reg-plan-card .reg-plan-price {
+        font-size: 22px;
+        font-weight: 800;
+        color: {{ config('custom.button_color_entrar') }};
+        line-height: 1.1;
+    }
+
+    .reg-plan-card .reg-plan-price small {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: {{ config('custom.text_color_form') }};
+        opacity: .75;
+        margin-top: 2px;
+    }
+
+    .reg-plan-card .reg-plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 14px;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .reg-plan-card .reg-plan-features li {
+        padding: 3px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .reg-plan-card .reg-plan-features li i {
+        color: {{ config('custom.button_color_entrar') }};
+        margin-top: 3px;
+        font-size: 10px;
+    }
+
+    .reg-plan-card .reg-plan-pick {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1.5px solid {{ config('custom.button_color_entrar') }};
+        color: {{ config('custom.button_color_entrar') }};
+        background: transparent;
+        transition: background .18s ease, color .18s ease;
+    }
+
+    .reg-plan-card.selected .reg-plan-pick {
+        background: {{ config('custom.button_color_entrar') }};
+        color: #fff;
+    }
+
+    .reg-plan-prev,
+    .reg-plan-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: {{ config('custom.button_color_entrar') }};
+        color: #fff;
+        font-size: 16px;
+        z-index: 4;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+
+    .reg-plan-prev { left: -10px; }
+    .reg-plan-next { right: -10px; }
+
+    .reg-plan-prev.show,
+    .reg-plan-next.show { display: flex; }
+
+    @media (max-width: 575.98px) {
+        .reg-plan-card { flex: 0 0 86vw; min-width: 86vw; }
+    }
 </style>
 
 @section('content')
@@ -413,28 +589,42 @@
                         value="{{ old('source', session('customerData')['source'] ?? '') }}"
                         {{ isset(session('customerData')['source']) ? 'readonly' : '' }}>
 
-                    <!-- Step 1: Plan Selection -->
+                    <!-- Step 1: Plan Selection (3 cards lado a lado) -->
                     <div class="step-content active" data-step-content="1">
-                        <div class="input-group mb-3" style="color: {{ config('custom.text_color_recuperar') }};">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <label class="title-input2 mb-0" for="plan">Planos *</label>
-                                <button type="button" class="btn btn-primary btn-view title-input2" data-toggle="modal"
-                                    data-target="#modalPlanos">Ver planos
-                                </button>
-                            </div>
+                        <label class="title-input2 d-block text-center mb-3">Escolha seu plano *</label>
 
-                            <select id="plan_id" class="form-control" name="plan_id" required>
-                                <option value="">Selecione...</option>
+                        <div class="reg-plan-section">
+                            <button type="button" class="reg-plan-prev" aria-label="Anterior"><i class="fa fa-chevron-left"></i></button>
+                            <button type="button" class="reg-plan-next" aria-label="Próximo"><i class="fa fa-chevron-right"></i></button>
+
+                            <div class="reg-plan-track" id="regPlanTrack">
                                 @foreach ($plans as $plan)
-                                    <option value="{{ $plan->id }}"
-                                        data-telemedicine="{{ $plan->is_active_telemedicine }}"
-                                        @selected($plan->id == $planId)>
-                                        {{ $plan->name . ' - ' . number_format($plan->value, 2, ',', '.') }}
-
-                                    </option>
+                                    <div class="reg-plan-card {{ $plan->id == $planId ? 'selected' : '' }}"
+                                         data-plan-id="{{ $plan->id }}"
+                                         data-telemedicine="{{ $plan->is_active_telemedicine }}"
+                                         data-base-value="{{ $plan->value }}">
+                                        @if ($plan->is_best_seller)
+                                            <span class="reg-plan-badge">Mais vendido</span>
+                                        @endif
+                                        <div class="reg-plan-name">{{ $plan->name }}</div>
+                                        <div class="reg-plan-price">
+                                            <span class="reg-plan-price-value">R$ {{ number_format($plan->value, 2, ',', '.') }}</span>
+                                            <small>{{ ucfirst(strtolower($plan->cycle ?? 'mensal')) }}</small>
+                                        </div>
+                                        <ul class="reg-plan-features">
+                                            @foreach ($plan->benefits->take(4) as $benefit)
+                                                <li><i class="fa fa-check"></i><span>{{ $benefit->description }}</span></li>
+                                            @endforeach
+                                        </ul>
+                                        <button type="button" class="reg-plan-pick">Selecionar</button>
+                                    </div>
                                 @endforeach
-                            </select>
+                            </div>
+                        </div>
 
+                        <input type="hidden" name="plan_id" id="plan_id" value="{{ $planId ?? '' }}" required>
+
+                        <div class="step-form-inner">
                             <div class="form-group mt-3">
                                 <label for="coupon" style="color:{{ config('custom.text_color_form') }}">Cupom de
                                     Desconto</label>
@@ -445,16 +635,17 @@
                                 </div>
                                 <small id="couponFeedback" class="form-text text-danger"></small>
                             </div>
-                        </div>
 
-                        <div class="navigation-buttons">
-                            <button type="button" class="btn btn-nav btn-next"
-                                style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
+                            <div class="navigation-buttons">
+                                <button type="button" class="btn btn-nav btn-next"
+                                    style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Step 2: Personal Info -->
                     <div class="step-content" data-step-content="2">
+                        <div class="step-form-inner">
                         <div class="input-group mb-3">
                             <label class="title-input2" for="name">Qual seu nome completo *</label>
                             <input type="text" name="name" id="name" class="form-control"
@@ -509,10 +700,12 @@
                             <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Step 3: Dependents (only when telemedicine plan) -->
                     <div class="step-content" data-step-content="3" data-conditional="telemedicine">
+                        <div class="step-form-inner">
                         <div class="dependents-intro">
                             <span class="title-input2">Quantos dependentes deseja cadastrar?</span>
                             <small class="d-block">Selecione de 1 a 3 dependentes para incluir nos benefícios de
@@ -618,10 +811,12 @@
                             <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Step 4: Credentials -->
                     <div class="step-content" data-step-content="4">
+                        <div class="step-form-inner">
                         <div class="input-group mb-3">
                             <label class="title-input2" for="usuario">Digite seu usuário *</label>
                             <input type="text" name="login" id="usuario" class="form-control"
@@ -671,10 +866,12 @@
                             <button type="button" class="btn btn-nav btn-next"
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Próximo</button>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Step 5: Payment -->
                     <div class="step-content" data-step-content="5">
+                        <div class="step-form-inner">
                         <div class="input-group mb-3">
                             <label class="title-input2" for="card_number">Número do cartão *</label>
                             <input type="number" name="credit_card_number" id="card_number" class="form-control"
@@ -728,6 +925,7 @@
                                 style="background-color:{{ config('custom.background_button_next_prev') }}; color:{{ config('custom.text_color_button_next_prev') }};">Finalizar
                                 Cadastro</button>
                         </div>
+                        </div>
                     </div>
 
                     <div class="footer-links">
@@ -770,69 +968,53 @@
         <p class="copyright-footer">{{ config('custom.text_copy') }}</p>
     </footer>
 
-    <div class="modal fade" id="modalPlanos" tabindex="-1" aria-labelledby="modalLabelPlanos" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalLabelPlanos">Planos</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="container">
-                        <div class="row">
-                            @foreach ($plans as $plan)
-                                <div class="col-md-4 mb-4">
-                                    <div class="plan-card {{ $plan->is_best_seller ? 'best-seller' : '' }}">
-                                        @if ($plan->is_best_seller)
-                                            <div class="best-seller-badge">Mais vendido</div>
-                                        @endif
-                                        <h4>{{ $plan->name }}</h4>
-                                        <div class="plan-price">R$ {{ number_format($plan->value, 2, ',', '.') }}</div>
-                                        <ul class="plan-features">
-                                            @foreach ($plan->benefits as $benefit)
-                                                <li>{{ $benefit->description }}</li>
-                                            @endforeach
-                                        </ul>
-                                        <button type="button" class="btn btn-primary w-100"
-                                            onclick="selectPlan({{ $plan->id }})" data-dismiss="modal">
-                                            Assinar
-                                        </button>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <p class="text-center mt-4">Curta nossas séries, filmes e conteúdos exclusivos feitos para você!
-                        </p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 @endsection
 
 @section('javascriptLocal')
     <script>
         $(function() {
-            initSelects2();
             initMasks();
             initStepNavigation();
             initDependentsUI();
-
-            $('#plan_id').on('change', function() {
-                applyTelemedicineState();
-            });
+            initPlanCards();
+            initPlanArrows();
 
             applyTelemedicineState();
         });
 
         function isTelemedicine() {
-            return $('#plan_id').find(':selected').data('telemedicine') == 1;
+            const $selected = $('.reg-plan-card.selected').first();
+            return $selected.length && $selected.data('telemedicine') == 1;
+        }
+
+        function initPlanCards() {
+            $(document).on('click', '.reg-plan-card', function() {
+                const $card = $(this);
+                $('.reg-plan-card').removeClass('selected');
+                $card.addClass('selected');
+                $('#plan_id').val($card.data('plan-id'));
+                applyTelemedicineState();
+            });
+        }
+
+        function initPlanArrows() {
+            const $track = $('#regPlanTrack');
+            const $prev = $('.reg-plan-prev');
+            const $next = $('.reg-plan-next');
+            if (!$track.length) return;
+
+            const updateArrows = () => {
+                const el = $track[0];
+                const hasOverflow = el.scrollWidth > el.clientWidth + 4;
+                $prev.toggleClass('show', hasOverflow && el.scrollLeft > 4);
+                $next.toggleClass('show', hasOverflow && el.scrollLeft < (el.scrollWidth - el.clientWidth - 4));
+            };
+
+            $prev.on('click', () => $track[0].scrollBy({ left: -220, behavior: 'smooth' }));
+            $next.on('click', () => $track[0].scrollBy({ left: 220, behavior: 'smooth' }));
+            $track.on('scroll', updateArrows);
+            $(window).on('resize', updateArrows);
+            setTimeout(updateArrows, 50);
         }
 
         function getVisibleSteps() {
@@ -859,13 +1041,6 @@
             updateProgressBar(currentStep);
         }
 
-        function initSelects2() {
-            $('#plan_id').select2({
-                theme: "bootstrap4",
-                allowClear: true,
-            });
-        }
-
         function initMasks() {
             $('#document').mask('000.000.000-00');
             $('#mobile').mask('(00) 00000-0000');
@@ -878,6 +1053,10 @@
                 const visible = getVisibleSteps();
                 const idx = visible.indexOf(currentStep);
                 if (idx >= 0 && idx < visible.length - 1) {
+                    if (currentStep === 1 && !$('#plan_id').val()) {
+                        alert('Selecione um plano para continuar.');
+                        return;
+                    }
                     if (currentStep === 3 && !validateDependentsStep()) {
                         return;
                     }
@@ -997,12 +1176,12 @@
         }
 
         function selectPlan(planId) {
-            $('#plan_id').val(planId).trigger('change');
+            $(`.reg-plan-card[data-plan-id="${planId}"]`).trigger('click');
         }
 
         document.getElementById('applyCoupon').addEventListener('click', function() {
             const coupon = document.getElementById('coupon').value;
-            const planId = document.querySelector('select[name="plan_id"]').value;
+            const planId = document.getElementById('plan_id').value;
 
             if (!coupon || !planId) {
                 document.getElementById('couponFeedback').innerText = 'Selecione um plano e insira um cupom.';
@@ -1029,13 +1208,10 @@
                         feedback.classList.remove('text-danger');
                         feedback.classList.add('text-success');
 
-                        const selectedOption = document.querySelector(
-                            `select[name="plan_id"] option[value="${planId}"]`);
-                        if (selectedOption) {
-                            selectedOption.innerText =
-                                `${selectedOption.innerText.split(' - ')[0]} - R$ ${data.discounted_value}`;
+                        const $priceEl = $(`.reg-plan-card[data-plan-id="${planId}"] .reg-plan-price-value`);
+                        if ($priceEl.length) {
+                            $priceEl.text('R$ ' + data.discounted_value);
                         }
-
                     } else {
                         feedback.innerText = data.message;
                         feedback.classList.remove('text-success');
