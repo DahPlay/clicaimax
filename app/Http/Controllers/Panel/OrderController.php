@@ -410,11 +410,13 @@ class OrderController extends Controller
         $validator = Validator::make($request->all(), [
             'planId' => 'required',
             'orderId' => 'required',
-            'coupon' => 'nullable'
+            'coupon' => 'nullable',
+            'billing_type' => 'nullable|in:CREDIT_CARD,PIX,BOLETO',
         ]);
 
         $planId = $validator->validated()['planId'];
         $couponName = $request->input('coupon');
+        $newBillingType = $request->input('billing_type') ?: 'CREDIT_CARD';
 
         $coupon = null;
         $discountedValue = 0;
@@ -888,14 +890,19 @@ class OrderController extends Controller
             }
             (new PlanCreateService($packagesToCreate, $order->customer->viewers_id))->createPlan();
 
-            // Atualiza o pedido
-            $order->update([
+            // Atualiza o pedido (inclui billing_type quando informado pelo form da troca)
+            $updateData = [
                 'plan_id' => $plan->id,
                 'description' => $plan->description,
                 'changed_plan' => true,
                 'value' => $invoiceValue,
                 'original_plan_value' => $plan->value
-            ]);
+            ];
+            $reqBilling = request()->input('billing_type');
+            if ($reqBilling && in_array($reqBilling, ['CREDIT_CARD','PIX','BOLETO'], true)) {
+                $updateData['billing_type'] = $reqBilling;
+            }
+            $order->update($updateData);
             return true;
         }
 
