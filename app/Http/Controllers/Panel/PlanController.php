@@ -147,7 +147,14 @@ class PlanController extends Controller
         // 6) Injetar priority no array de dados
         $data['priority'] = (int) $priority;
 
-        // 7) Criar o plano
+        // 7) Billing types — derivar singular legado do primeiro escolhido
+        $allowed = array_values(array_filter((array) $request->input('allowed_billing_types', [])));
+        if (!empty($allowed)) {
+            $data['allowed_billing_types'] = $allowed;
+            $data['billing_type'] = $allowed[0];
+        }
+
+        // 8) Criar o plano
         $plan = $this->model->create($data);
 
         if ($plan) {
@@ -292,6 +299,13 @@ class PlanController extends Controller
         $data['is_active'] = isset($data['is_active']) ? 1 : 0;
         $data['is_active_telemedicine'] = isset($data['is_active_telemedicine']) ? 1 : 0;
         $data['is_best_seller'] = isset($data['is_best_seller']) ? 1 : 0;
+
+        // Billing types — array de aceitos + singular legado (primeiro do array)
+        $allowed = array_values(array_filter((array) $this->request->input('allowed_billing_types', [])));
+        if (!empty($allowed)) {
+            $data['allowed_billing_types'] = $allowed;
+            $data['billing_type'] = $allowed[0];
+        }
 
         $plan->update($data);
 

@@ -75,15 +75,24 @@
         </div>
 
         <div class="form-group col-12 col-md-6">
-            <label for="billing_type" class="col-form-label text-danger">Tipo de pagamento: *</label>
-            <select id="billing_type" class="form-control" name="billing_type" required>
+            <label class="col-form-label text-danger">Tipos de pagamento aceitos: *</label>
+            @php
+                $allowedSelected = old('allowed_billing_types',
+                    isset($plan) && $plan->allowed_billing_types
+                        ? (array) $plan->allowed_billing_types
+                        : ((isset($plan) && $plan->billing_type) ? [$plan->billing_type] : []));
+            @endphp
+            <div class="d-flex flex-wrap" style="gap: 14px;">
                 @foreach (\App\Enums\BillingTypeAsaasEnum::cases() as $billing_type)
-                    <option value="{{ $billing_type->value }}"
-                            {{ old('billing_type', $plan->billing_type ?? '') == $billing_type->value ? 'selected' : '' }}>
-                        {{ $billing_type->getName() }}
-                    </option>
+                    <label class="d-inline-flex align-items-center" style="gap: 6px; cursor: pointer;">
+                        <input type="checkbox" name="allowed_billing_types[]"
+                               value="{{ $billing_type->value }}"
+                               {{ in_array($billing_type->value, (array) $allowedSelected) ? 'checked' : '' }}>
+                        <span>{{ $billing_type->getName() }}</span>
+                    </label>
                 @endforeach
-            </select>
+            </div>
+            <small class="text-muted">Selecione um ou mais. O primeiro selecionado vira o padrão.</small>
         </div>
     </div>
 

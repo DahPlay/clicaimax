@@ -15,7 +15,9 @@ class PlanRequest extends FormRequest
             'is_active' => ['nullable', 'string'],
             'cycle' => ['nullable', 'string'],
             'is_best_seller' => ['nullable', 'string'],
-            'billing_type' => ['string'],
+            'billing_type' => ['nullable', 'string'],
+            'allowed_billing_types' => ['required', 'array', 'min:1'],
+            'allowed_billing_types.*' => ['string', 'in:CREDIT_CARD,PIX,BOLETO'],
             'free_for_days' => ['integer'],
             'packages' => ['required', 'array']
         ];

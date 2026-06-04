@@ -20,10 +20,15 @@ class Plan extends Model
         'is_best_seller',
         'cycle',
         'billing_type',
+        'allowed_billing_types',
         'free_for_days',
         'priority',
         'hidden',
         'is_active_telemedicine',
+    ];
+
+    protected $casts = [
+        'allowed_billing_types' => 'array',
     ];
 
     protected function value(): Attribute
@@ -31,6 +36,19 @@ class Plan extends Model
         return Attribute::make(
             set: fn(string $value) => str_replace(['.', ','], ['', '.'], $value),
         );
+    }
+
+    /**
+     * Lista efetiva de billing types aceitos: usa o JSON quando preenchido,
+     * fallback ao billing_type singular legado quando vazio/null.
+     */
+    public function getEffectiveBillingTypesAttribute(): array
+    {
+        $list = $this->allowed_billing_types;
+        if (is_array($list) && count($list) > 0) {
+            return array_values(array_filter($list));
+        }
+        return $this->billing_type ? [$this->billing_type] : ['CREDIT_CARD'];
     }
 
     public function orders(): HasMany
