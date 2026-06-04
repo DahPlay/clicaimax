@@ -9,7 +9,7 @@
                 @can('admin')
                     <style>
                         .dash-filter-card {
-                            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+                            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
                             color: #fff;
                             border: 0;
                             border-radius: 12px;
@@ -17,27 +17,27 @@
                             margin-bottom: 22px;
                             box-shadow: 0 6px 18px rgba(0,0,0,.08);
                         }
-                        .dash-filter-card label { color: #d7e6c9; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+                        .dash-filter-card label { color: #bbdefb; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
                         .dash-filter-card .form-control, .dash-filter-card select.form-control { border: 0; border-radius: 8px; }
                         .dash-btn-pill { border-radius: 999px; padding: 6px 22px; font-weight: 700; border: 0; }
-                        .dash-btn-apply { background: #fff; color: #1b5e20; }
-                        .dash-btn-apply:hover { background: #f5f5f5; color: #154a18; }
+                        .dash-btn-apply { background: #fff; color: #0d47a1; }
+                        .dash-btn-apply:hover { background: #f5f5f5; color: #082968; }
                         .dash-btn-clear { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.6); }
                         .dash-btn-clear:hover { background: rgba(255,255,255,.12); color: #fff; }
 
                         .dash-kpi { border: 0; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.06); overflow: hidden; }
                         .dash-kpi .kpi-label { font-size: 12px; color: #7a8a93; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
-                        .dash-kpi .kpi-value { font-size: 22px; font-weight: 800; color: #2c3e0f; line-height: 1.1; margin: 4px 0 2px; }
+                        .dash-kpi .kpi-value { font-size: 22px; font-weight: 800; color: #0d2b4a; line-height: 1.1; margin: 4px 0 2px; }
                         .dash-kpi .kpi-meta  { font-size: 12px; color: #6c757d; }
-                        .dash-kpi .kpi-icon  { float: right; font-size: 26px; opacity: .25; color: #1b5e20; }
+                        .dash-kpi .kpi-icon  { float: right; font-size: 26px; opacity: .25; color: #0d47a1; }
 
                         .dash-chart-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-bottom: 22px; }
-                        .dash-chart-card h6 { font-weight: 700; color: #2c3e0f; margin-bottom: 14px; text-transform: uppercase; font-size: 13px; letter-spacing: .4px; }
+                        .dash-chart-card h6 { font-weight: 700; color: #0d2b4a; margin-bottom: 14px; text-transform: uppercase; font-size: 13px; letter-spacing: .4px; }
                         .dash-chart-wrap { height: 280px; position: relative; }
 
                         .dash-section-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-bottom: 22px; }
-                        .dash-section-card h6 { font-weight: 700; color: #2c3e0f; margin-bottom: 12px; text-transform: uppercase; font-size: 13px; letter-spacing: .4px; }
-                        .dash-link { display: inline-block; padding: 4px 14px; border-radius: 999px; background: linear-gradient(135deg, #2e7d32, #1b5e20); color: #fff !important; font-size: 12px; font-weight: 600; text-decoration: none; }
+                        .dash-section-card h6 { font-weight: 700; color: #0d2b4a; margin-bottom: 12px; text-transform: uppercase; font-size: 13px; letter-spacing: .4px; }
+                        .dash-link { display: inline-block; padding: 4px 14px; border-radius: 999px; background: linear-gradient(135deg, #1565c0, #0d47a1); color: #fff !important; font-size: 12px; font-weight: 600; text-decoration: none; }
                         .dash-link:hover { opacity: .9; }
                     </style>
 
@@ -285,9 +285,9 @@
         $(function () {
             if (typeof Chart === 'undefined') return;
 
-            const greenSolid    = '#2e7d32';
+            const greenSolid    = '#1565c0';
             const greenSoft     = 'rgba(46,125,50,.18)';
-            const billingColors = ['#2e7d32', '#43a047', '#a5d6a7', '#1b5e20', '#66bb6a', '#388e3c'];
+            const billingColors = ['#1565c0', '#1976d2', '#90caf9', '#0d47a1', '#42a5f5', '#1e88e5'];
             const moneyFmt = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             // 1) Receita mensal
@@ -319,15 +319,15 @@
             const tpCanvas = document.getElementById('chartTopPlans');
             const tpCtx = tpCanvas.getContext('2d');
             const tpGrad = tpCtx.createLinearGradient(0, 0, tpCanvas.clientWidth || 400, 0);
-            tpGrad.addColorStop(0, '#a5d6a7');
-            tpGrad.addColorStop(1, '#1b5e20');
+            tpGrad.addColorStop(0, '#90caf9');
+            tpGrad.addColorStop(1, '#0d47a1');
 
             const valueLabelsPlugin = {
                 afterDatasetsDraw: (chart) => {
                     const ctx = chart.chart.ctx;
                     ctx.save();
                     ctx.font = '600 11px sans-serif';
-                    ctx.fillStyle = '#2c3e0f';
+                    ctx.fillStyle = '#0d2b4a';
                     ctx.textBaseline = 'middle';
                     chart.data.datasets.forEach((ds, i) => {
                         const meta = chart.getDatasetMeta(i);

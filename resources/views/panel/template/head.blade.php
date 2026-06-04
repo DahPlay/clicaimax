@@ -127,7 +127,7 @@
             box-shadow: 0 12px 36px rgba(0,0,0,.18);
         }
         .modal-header {
-            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             color: #fff;
             border-bottom: 0;
             padding: 16px 22px;
@@ -151,7 +151,7 @@
             font-weight: 600;
         }
         .modal-footer .btn-primary {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
             border: 0;
         }
         .modal-footer .btn-primary:hover { filter: brightness(1.05); }
@@ -160,7 +160,7 @@
             color: #495057;
             border: 0;
         }
-        .modal-footer .btn-secondary:hover { background: #dde0e3; color: #2c3e0f; }
+        .modal-footer .btn-secondary:hover { background: #dde0e3; color: #0d2b4a; }
         .modal-footer .btn-danger {
             background: linear-gradient(135deg, #ef5350, #c62828);
             border: 0;
@@ -168,30 +168,30 @@
 
         /* ---- DATATABLES ---- */
         #table thead th {
-            background: #e8efd9 !important;
-            color: #2c3e0f !important;
+            background: #e3f2fd !important;
+            color: #0d2b4a !important;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .4px;
-            border-bottom: 2px solid #c9d6a8;
+            border-bottom: 2px solid #90caf9;
             font-size: 12.5px;
         }
         #table tbody tr:hover {
-            background: #f3f8e8;
+            background: #eaf3fc;
         }
         .dataTables_filter input {
             border-radius: 999px !important;
-            border: 1.5px solid #b7d09c !important;
+            border: 1.5px solid #90caf9 !important;
             padding: 4px 14px !important;
             outline: none;
         }
         .dataTables_filter input:focus {
-            border-color: #2e7d32 !important;
+            border-color: #1565c0 !important;
             box-shadow: 0 0 0 .15rem rgba(46,125,50,.18);
         }
         .dataTables_length select {
             border-radius: 999px !important;
-            border: 1.5px solid #b7d09c !important;
+            border: 1.5px solid #90caf9 !important;
             padding: 2px 24px 2px 12px !important;
         }
         .dataTables_paginate .paginate_button {
@@ -200,14 +200,14 @@
         }
         .dataTables_paginate .paginate_button.current,
         .dataTables_paginate .paginate_button.current:hover {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20) !important;
-            border-color: #1b5e20 !important;
+            background: linear-gradient(135deg, #1565c0, #0d47a1) !important;
+            border-color: #0d47a1 !important;
             color: #fff !important;
         }
 
         /* Botões DT (Excel/PDF/Colvis) */
         .dt-buttons .dt-button {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20) !important;
+            background: linear-gradient(135deg, #1565c0, #0d47a1) !important;
             color: #fff !important;
             border: 0 !important;
             border-radius: 999px !important;
@@ -232,7 +232,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .3px;
-            background: linear-gradient(135deg, #1b5e20, #0d4711);
+            background: linear-gradient(135deg, #0d47a1, #082968);
             color: #fff !important;
             text-decoration: none !important;
             transition: filter .15s ease, transform .15s ease;

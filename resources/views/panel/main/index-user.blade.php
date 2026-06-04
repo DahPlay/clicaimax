@@ -6,7 +6,7 @@
             <div class="container-fluid">
                 <style>
                     .du-hero {
-                        background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+                        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
                         color: #fff;
                         border-radius: 14px;
                         padding: 26px 28px;
@@ -26,14 +26,14 @@
                         position: relative;
                     }
                     .du-plan-card h6  { color: #6c757d; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
-                    .du-plan-card .plan-name { font-size: 22px; font-weight: 800; color: #1b5e20; margin: 4px 0 8px; }
+                    .du-plan-card .plan-name { font-size: 22px; font-weight: 800; color: #0d47a1; margin: 4px 0 8px; }
                     .du-plan-card .plan-meta { color: #495057; font-size: 13px; }
                     .du-plan-card .badge-status {
                         position: absolute; top: 22px; right: 22px;
                         padding: 5px 14px; border-radius: 999px;
                         font-size: 11px; font-weight: 700; letter-spacing: .4px;
                     }
-                    .badge-status.is-active   { background: #c8e6c9; color: #1b5e20; }
+                    .badge-status.is-active   { background: #c8e6c9; color: #0d47a1; }
                     .badge-status.is-pending  { background: #fff3cd; color: #856404; }
                     .badge-status.is-canceled { background: #f8d7da; color: #721c24; }
 
@@ -47,10 +47,10 @@
                         transition: transform .18s ease, box-shadow .18s ease;
                         text-decoration: none !important;
                         display: block;
-                        color: #2c3e0f;
+                        color: #0d2b4a;
                     }
-                    .du-shortcut:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.10); color: #1b5e20; }
-                    .du-shortcut i { font-size: 26px; color: #2e7d32; margin-bottom: 10px; display: block; }
+                    .du-shortcut:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.10); color: #0d47a1; }
+                    .du-shortcut i { font-size: 26px; color: #1565c0; margin-bottom: 10px; display: block; }
                     .du-shortcut .label { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
                 </style>
 
