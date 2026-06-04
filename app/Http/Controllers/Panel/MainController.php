@@ -156,18 +156,19 @@ class MainController extends Controller
             $chartBillingData[]   = (int) $qty;
         }
 
-        // 4) Novos clientes por mês (últimos 12 meses)
+        // 4) Novos clientes por mês — usa o mesmo período do filtro (mesmos labels do chart de receita).
         $newCustomers = Customer::query()
             ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as ym, COUNT(*) as qty')
-            ->whereDate('created_at', '>=', $start12m->toDateString())
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
             ->groupBy('ym')
             ->orderBy('ym')
             ->pluck('qty', 'ym');
 
         $chartCustomersLabels = $chartRevenueLabels;
         $chartCustomersData   = [];
-        for ($i = 0; $i < 12; $i++) {
-            $m = $start12m->copy()->addMonths($i);
+        for ($i = 0; $i < $monthsCount; $i++) {
+            $m = $fromC->copy()->addMonths($i);
             $chartCustomersData[] = (int) ($newCustomers[$m->format('Y-m')] ?? 0);
         }
 
