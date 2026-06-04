@@ -95,6 +95,32 @@
             </div>
         </div>
     </div>
+
+    @if (isset($customer->id))
+        {{-- Bloco colapsável de troca de senha (apenas em edição) --}}
+        <div class="row">
+            <div class="form-group col-12">
+                <a href="javascript:;" id="togglePasswordBlock" class="text-primary" style="font-weight:600;">
+                    <i class="fa fa-lock mr-1"></i> Alterar senha
+                </a>
+                <div id="passwordBlock" style="display:none; margin-top: 12px;">
+                    <div class="row">
+                        <div class="form-group col-12 col-md-6">
+                            <label for="password" class="col-form-label">Nova senha:</label>
+                            <input type="password" id="password" class="form-control" name="password"
+                                   autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+                        </div>
+                        <div class="form-group col-12 col-md-6">
+                            <label for="password_confirmation" class="col-form-label">Confirmar senha:</label>
+                            <input type="password" id="password_confirmation" class="form-control"
+                                   name="password_confirmation" autocomplete="new-password" placeholder="Repita a senha">
+                        </div>
+                    </div>
+                    <small class="text-muted">Deixe em branco se não quiser alterar a senha.</small>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 <script>
@@ -111,12 +137,25 @@
         formData.append('cpf_dependente_2', $("#cpf_dependente_2").val());
         formData.append('cpf_dependente_3', $("#cpf_dependente_3").val());
 
+        // Anexa senha apenas se foi preenchida (Bloco 5)
+        const pwd  = ($("#password").val() || '').trim();
+        const pwd2 = ($("#password_confirmation").val() || '').trim();
+        if (pwd !== '') {
+            formData.append('password', pwd);
+            formData.append('password_confirmation', pwd2);
+        }
+
         return formData;
     }
 
     $(function() {
         initSelects2();
         initMasks();
+
+        // Toggle do bloco de senha
+        $(document).on('click', '#togglePasswordBlock', function () {
+            $('#passwordBlock').toggle();
+        });
     });
 
     function initSelects2() {

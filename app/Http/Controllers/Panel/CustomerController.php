@@ -8,6 +8,8 @@ use App\Models\Coupon;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\View\View;
@@ -152,51 +154,7 @@ class CustomerController extends Controller
     {
         $customer = $this->model->find($id);
 
-        if ($customer) {
-            $data = $this->request->only([
-                'name',
-                'id',
-                'document',
-                'mobile',
-                'birthdate',
-                'email',
-                'cpf_dependente_1',
-                'cpf_dependente_2',
-                'cpf_dependente_3',
-            ]);
-
-            $validator = Validator::make($data, [
-                'id' => ['integer'],
-                'name' => ['required', 'string'],
-                'document' => ['required', 'string'],
-                'mobile' => ['required', 'string'],
-                'birthdate' => ['nullable', 'date'],
-                'email' => ['required', 'string'],
-            ]);
-
-            if (count($validator->errors()) > 0) {
-                return response()->json([
-                    'status' => 400,
-                    'errors' => $validator->errors(),
-                ]);
-            }
-
-            $customer->update($data);
-
-            if ($customer) {
-                return response()->json([
-                    'status' => '200',
-                    'message' => 'Ação executada com sucesso!'
-                ]);
-            } else {
-                return response()->json([
-                    'status' => '400',
-                    'errors' => [
-                        'message' => ['Erro executar a ação, tente novamente!']
-                    ]
-                ]);
-            }
-        } else {
+        if (!$customer) {
             return response()->json([
                 'status' => '400',
                 'errors' => [
@@ -204,6 +162,65 @@ class CustomerController extends Controller
                 ]
             ]);
         }
+
+        $data = $this->request->only([
+            'name',
+            'id',
+            'document',
+            'mobile',
+            'birthdate',
+            'email',
+            'cpf_dependente_1',
+            'cpf_dependente_2',
+            'cpf_dependente_3',
+        ]);
+
+        $newPassword = trim((string) $this->request->input('password', ''));
+
+        $rules = [
+            'id' => ['integer'],
+            'name' => ['required', 'string'],
+            'document' => ['required', 'string'],
+            'mobile' => ['required', 'string'],
+            'birthdate' => ['nullable', 'date'],
+            'email' => ['required', 'string'],
+        ];
+
+        if ($newPassword !== '') {
+            $rules['password'] = ['required', 'string', 'min:6', 'confirmed'];
+        }
+
+        $validator = Validator::make(
+            $data + ['password' => $newPassword, 'password_confirmation' => $this->request->input('password_confirmation')],
+            $rules
+        );
+
+        if (count($validator->errors()) > 0) {
+            return response()->json([
+                'status' => 400,
+                'errors' => $validator->errors(),
+            ]);
+        }
+
+        $customer->update($data);
+
+        // Troca de senha opcional: atualiza User e sinaliza YouCast via session yc_pwd
+        if ($newPassword !== '' && $customer->user_id) {
+            $user = User::find($customer->user_id);
+            if ($user) {
+                $user->password = Hash::make($newPassword);
+                $user->save();
+
+                // SEMPRE Crypt::encryptString (encrypt() serializa e quebra o decrypt)
+                session(['yc_pwd' => Crypt::encryptString($newPassword)]);
+                // CustomerObserver::updated() dispara CustomerUpdate no YouCast com essa senha
+            }
+        }
+
+        return response()->json([
+            'status' => '200',
+            'message' => 'Ação executada com sucesso!'
+        ]);
     }
 
     public function delete($id): View

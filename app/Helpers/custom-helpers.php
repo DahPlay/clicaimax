@@ -3,6 +3,46 @@
 use App\Services\PaymentGateway\Connectors\AsaasConnector;
 use App\Services\PaymentGateway\Gateway;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Crypt;
+
+if (!function_exists('decryptYcPwd')) {
+    /**
+     * Descriptografa o valor armazenado em session('yc_pwd') de forma defensiva.
+     *
+     * Hoje gravamos sempre com Crypt::encryptString() (string crua). Mas valores
+     * antigos podem ter sido escritos com Crypt::encrypt() (serialização PHP),
+     * gerando "s:N:\"...\";" depois do decrypt. Aqui detectamos e tratamos os
+     * dois casos sem quebrar.
+     */
+    function decryptYcPwd($encrypted): ?string
+    {
+        if ($encrypted === null || $encrypted === '') {
+            return null;
+        }
+
+        try {
+            // Tentamos como string (encryptString -> decryptString)
+            $value = Crypt::decryptString($encrypted);
+        } catch (\Throwable $e) {
+            try {
+                // Fallback: dados antigos gravados com Crypt::encrypt()
+                $value = Crypt::decrypt($encrypted);
+            } catch (\Throwable $e2) {
+                return null;
+            }
+        }
+
+        // Se vier no formato serializado "s:N:\"...\";", desempacotar.
+        if (is_string($value) && preg_match('/^s:\d+:".*";$/s', $value)) {
+            $unserialized = @unserialize($value);
+            if (is_string($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return is_string($value) ? $value : null;
+    }
+}
 
 if (!function_exists('get_gateway')) {
     function get_gateway()
