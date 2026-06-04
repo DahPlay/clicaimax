@@ -126,11 +126,29 @@ class RegisterController extends Controller
                 'string',
                 'confirmed',
             ],
-            'credit_card_number' => ['required', new \App\Rules\CreditCard()],
-            'credit_card_expiry_month' => ['required', 'digits:2'],
-            'credit_card_expiry_year' => ['required', 'digits:4'],
-            'credit_card_ccv' => ['required'],
+            'billing_type' => ['required', 'in:CREDIT_CARD,PIX,BOLETO'],
         ];
+
+        // Dados de cartão só são obrigatórios quando o método escolhido for CREDIT_CARD.
+        if (($data['billing_type'] ?? 'CREDIT_CARD') === 'CREDIT_CARD') {
+            $rules['credit_card_number']       = ['required', new \App\Rules\CreditCard()];
+            $rules['credit_card_expiry_month'] = ['required', 'digits:2'];
+            $rules['credit_card_expiry_year']  = ['required', 'digits:4'];
+            $rules['credit_card_ccv']          = ['required'];
+        }
+
+        // Garante que o billing_type escolhido está entre os aceitos pelo plano.
+        if (!empty($data['plan_id']) && !empty($data['billing_type'])) {
+            $plan = Plan::find($data['plan_id']);
+            if ($plan) {
+                $allowed = $plan->allowed_billing_types ?: [$plan->billing_type ?: 'CREDIT_CARD'];
+                if (!in_array($data['billing_type'], (array) $allowed, true)) {
+                    $rules['billing_type'][] = function ($attribute, $value, $fail) use ($allowed) {
+                        $fail('Esta forma de pagamento não está disponível para o plano selecionado.');
+                    };
+                }
+            }
+        }
 
         if ($isTelemedicinePlan) {
             $count = (int) ($data['dependents_count'] ?? 0);
@@ -188,7 +206,9 @@ class RegisterController extends Controller
             'credit_card_expiry_year',
             'credit_card_ccv',
             'coupon',
+            'billing_type',
         ]);
+        $data['billing_type'] = $data['billing_type'] ?? 'CREDIT_CARD';
 
         $count = (int) $request->input('dependents_count', 0);
         $dependentsInput = (array) $request->input('dependents', []);

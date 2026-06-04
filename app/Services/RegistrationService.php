@@ -34,38 +34,43 @@ class RegistrationService
 
         $asaasCustomerId = null;
         $creditCardInfo = null;
+        $billingType = $data['billing_type'] ?? 'CREDIT_CARD';
 
         if (!empty($customerData['document'])) {
             Log::channel('registration')->info('Criando customer no Asaas', [
                 'name' => $customerData['name'],
                 'email' => $customerData['email'],
                 'document' => $customerData['document'],
+                'billing_type' => $billingType,
             ]);
 
             $asaasCustomerId = $this->createAsaasCustomer($customerData);
 
-            try {
-                $creditCardData = $this->extractCreditCardData($data);
-                Log::channel('registration')->info('Tentando tokenizar cartão', [
-                    'asaas_customer_id' => $asaasCustomerId,
-                    'card_last4' => substr($creditCardData['number'], -4),
-                    'holder' => $creditCardData['holderName'],
-                ]);
+            // Tokeniza cartão SOMENTE quando o método escolhido for CREDIT_CARD.
+            if ($billingType === 'CREDIT_CARD') {
+                try {
+                    $creditCardData = $this->extractCreditCardData($data);
+                    Log::channel('registration')->info('Tentando tokenizar cartão', [
+                        'asaas_customer_id' => $asaasCustomerId,
+                        'card_last4' => substr($creditCardData['number'], -4),
+                        'holder' => $creditCardData['holderName'],
+                    ]);
 
-                $creditCardInfo = $this->tokenizeCreditCard($asaasCustomerId, $creditCardData);
+                    $creditCardInfo = $this->tokenizeCreditCard($asaasCustomerId, $creditCardData);
 
-                Log::channel('registration')->info('Cartão tokenizado com sucesso', [
-                    'asaas_customer_id' => $asaasCustomerId,
-                    'token' => $creditCardInfo['token'],
-                    'brand' => $creditCardInfo['brand'],
-                ]);
-            } catch (\Exception $e) {
-                Log::channel('registration')->error('Falha na tokenização do cartão. Deletando customer no Asaas.', [
-                    'asaas_customer_id' => $asaasCustomerId,
-                    'error' => $e->getMessage(),
-                ]);
-                $this->deleteAsaasCustomer($asaasCustomerId);
-                throw $e;
+                    Log::channel('registration')->info('Cartão tokenizado com sucesso', [
+                        'asaas_customer_id' => $asaasCustomerId,
+                        'token' => $creditCardInfo['token'],
+                        'brand' => $creditCardInfo['brand'],
+                    ]);
+                } catch (\Exception $e) {
+                    Log::channel('registration')->error('Falha na tokenização do cartão. Deletando customer no Asaas.', [
+                        'asaas_customer_id' => $asaasCustomerId,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $this->deleteAsaasCustomer($asaasCustomerId);
+                    throw $e;
+                }
             }
         }
 
@@ -84,20 +89,21 @@ class RegistrationService
             Log::channel('registration')->debug('UserConsent local criado', ['email' => $userConsent->id]);
 
             if ($asaasCustomerId) {
-                $customer->update([
-                    'customer_id' => $asaasCustomerId,
-                    'credit_card_token' => $creditCardInfo['token'],
-                    'credit_card_brand' => $creditCardInfo['brand'],
-                    'credit_card_number' => $creditCardInfo['number'],
-                ]);
+                $customerUpdate = ['customer_id' => $asaasCustomerId];
+                if ($creditCardInfo) {
+                    $customerUpdate['credit_card_token']  = $creditCardInfo['token'];
+                    $customerUpdate['credit_card_brand']  = $creditCardInfo['brand'];
+                    $customerUpdate['credit_card_number'] = $creditCardInfo['number'];
+                }
+                $customer->update($customerUpdate);
 
                 Log::channel('registration')->info('Criando customer na YouCast', ['login' => $customer->login]);
                 $viewersId = $this->createYouCastCustomer($customer);
                 $customer->update(['viewers_id' => $viewersId]);
                 Log::channel('registration')->info('Customer YouCast criado', ['viewers_id' => $viewersId]);
 
-                Log::channel('registration')->debug('Criando pedido');
-                $order = $this->createOrder($customer, (int) $data['plan_id'], $data['coupon_id'] ?? null, (int) $userConsent->id);
+                Log::channel('registration')->debug('Criando pedido', ['billing_type' => $billingType]);
+                $order = $this->createOrder($customer, (int) $data['plan_id'], $data['coupon_id'] ?? null, (int) $userConsent->id, $billingType);
                 Log::channel('registration')->debug('Pedido criado', ['order_id' => $order->id]);
 
                 Log::channel('registration')->debug('Criando assinatura no Asaas');
@@ -329,7 +335,7 @@ class RegistrationService
         return $viewersId;
     }
 
-    private function createOrder(Customer $customer, int $planId, ?int $couponId, int $consent_id): Order
+    private function createOrder(Customer $customer, int $planId, ?int $couponId, int $consent_id, string $billingType = 'CREDIT_CARD'): Order
     {
         $plan = Plan::findOrFail($planId);
         $value = $plan->value;
@@ -358,7 +364,7 @@ class RegistrationService
             'customer_asaas_id' => $customer->customer_id,
             'value' => $value,
             'cycle' => $plan->cycle,
-            'billing_type' => 'CREDIT_CARD',
+            'billing_type' => $billingType,
             'next_due_date' => now()->addDays($plan->free_for_days)->format('Y-m-d'),
             'original_plan_value' => $plan->value,
             'consent_id' => $consent_id,
@@ -395,16 +401,23 @@ class RegistrationService
         $adapter = new AsaasConnector();
         $gateway = new Gateway($adapter);
 
+        // Usa o billing_type efetivo do pedido (escolhido pelo usuário no Step 5),
+        // não o singular legado do plano. Token só vai junto se for cartão.
+        $billingType = $order->billing_type ?: ($plan->billing_type ?: 'CREDIT_CARD');
+
         $payload = [
             'customer' => $customer->customer_id,
-            'billingType' => $plan->billing_type,
+            'billingType' => $billingType,
             'value' => $value,
             'nextDueDate' => now()->addDays($plan->free_for_days)->format('Y-m-d'),
             'cycle' => $plan->cycle,
             'description' => "Assinatura do plano $plan->name",
             'externalReference' => 'Pedido: ' . $order->id,
-            'creditCardToken' => $customer->credit_card_token,
         ];
+
+        if ($billingType === 'CREDIT_CARD' && $customer->credit_card_token) {
+            $payload['creditCardToken'] = $customer->credit_card_token;
+        }
 
         $response = $gateway->subscription()->create($payload);
 
