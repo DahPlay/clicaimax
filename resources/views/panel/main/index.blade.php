@@ -273,7 +273,7 @@
 @endsection
 
 @section('javascriptLocal')
-    {{-- Dados dos charts (PHP -> JS via @json é seguro AQUI: fora de comentario e em assignment direto) --}}
+    {{-- Dados dos charts (PHP -> JS em assignment direto fora de comentario) --}}
     <script>
         window.dashData = {
             revenue:   { labels: @json($chartRevenueLabels),   data: @json($chartRevenueData) },
