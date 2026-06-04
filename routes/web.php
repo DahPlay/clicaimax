@@ -404,6 +404,9 @@ Route::middleware('auth')->name('panel.')->group(function () {
 
         Route::get('/order/changeCard/{id_order}', [OrderController::class, 'changeCard'])
             ->name('changeCard');
+
+        Route::get('/orders/invoice/{id}', [OrderController::class, 'invoice'])
+            ->name('invoice');
     });
 });
 

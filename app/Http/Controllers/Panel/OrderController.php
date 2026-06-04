@@ -357,6 +357,21 @@ class OrderController extends Controller
         return view('panel.orders.local.index.modals.show', compact("order"));
     }
 
+    public function invoice($id): View
+    {
+        $order = $this->model->find($id);
+
+        $url = null;
+        if ($order && $order->payment_asaas_id) {
+            $idSemPrefixo = str_replace('pay_', '', $order->payment_asaas_id);
+            $environment  = app()->isLocal() ? 'sandbox' : 'production';
+            $urlBase      = config("asaas.{$environment}.fatura_url");
+            $url          = rtrim((string) $urlBase, '/') . '/i/' . $idSemPrefixo;
+        }
+
+        return view('panel.orders.local.index.modals.invoice', compact('order', 'url'));
+    }
+
     public function duplicate(): View
     {
         $order = $this->model->find($this->request->id);

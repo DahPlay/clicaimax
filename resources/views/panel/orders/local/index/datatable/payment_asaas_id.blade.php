@@ -1,17 +1,12 @@
-@php
-    $id = $item->payment_asaas_id;
-@endphp
-
-@if (!$id)
+@if (empty($item->subscription_asaas_id))
     <span class="badge bg-secondary">SEM FATURA</span>
 @else
-    @php
-        $idSemPrefixo = str_replace('pay_', '', $id);
-        $environment = app()->isLocal() ? 'sandbox' : 'production';
-        $urlBase = config("asaas.{$environment}.fatura_url");
-        $url = $urlBase . '/i/' . $idSemPrefixo;
-    @endphp
-
-    <a href="{{ $url }}" target="_blank" class="btn btn-sm btn-primary">
-        <i class="far fa-eye"></i> Ver Fatura</a>
+    <a href="javascript:;"
+       class="ap-btn-action btn-invoice btn-edit"
+       data-id="{{ $item->id }}"
+       data-url="/orders/invoice"
+       data-modal-size="modal-xl"
+       title="Ver fatura no Asaas">
+        <i class="far fa-eye mr-1"></i> Ver Fatura
+    </a>
 @endif

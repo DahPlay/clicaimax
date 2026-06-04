@@ -10,7 +10,8 @@
             });
 
             $(document).on('click', ".btn-edit", function(e) {
-                openModal(this, e, 'modal-lg');
+                const size = $(this).data('modal-size') || 'modal-lg';
+                openModal(this, e, size);
             });
 
             $(document).on('click', ".btn-show", function(e) {
