@@ -22,6 +22,48 @@
             });
 
             $(document).on('click', ".btn-remove", removeImage);
+
+            // Toggle ativo/inativo do pacote
+            $(document).on('click', ".btn-is-active", function (e) {
+                e.preventDefault();
+                const url = $(this).data('url');
+                const id  = $(this).data('id');
+                const isActive = $(this).hasClass('btn-success');
+                const action = isActive ? 'desativar' : 'ativar';
+
+                Swal.fire({
+                    title: 'Deseja ' + action + ' este pacote?',
+                    icon: isActive ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim',
+                    cancelButtonText: 'Cancelar',
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data && data.status === 200) {
+                                if (typeof toastMessage === 'function') {
+                                    toastMessage('success', data.message);
+                                }
+                                $('#table').DataTable().draw(false);
+                            } else {
+                                if (typeof toastMessage === 'function') {
+                                    toastMessage('error', 'Erro ao alterar status.');
+                                }
+                            }
+                        },
+                        error: function () {
+                            if (typeof toastMessage === 'function') {
+                                toastMessage('error', 'Erro de comunicação.');
+                            }
+                        }
+                    });
+                });
+            });
         });
 
         function removeImage() {

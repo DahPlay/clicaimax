@@ -249,6 +249,9 @@ Route::middleware('auth')->name('panel.')->group(function () {
         Route::post('/plans/removeImage', [PlanController::class, 'removeImage'])
             ->name('removeImage');
 
+        Route::post('/plans/toggleActive/{id}', [PlanController::class, 'toggleActive'])
+            ->name('toggleActive');
+
         Route::get('/plans/duplicate/{id}', [PlanController::class, 'duplicate'])
             ->name('duplicate');
 
@@ -314,6 +317,9 @@ Route::middleware('auth')->name('panel.')->group(function () {
 
         Route::delete('/packages/destroy/{id}', [PackagesController::class, 'destroy'])
             ->name('destroy');
+
+        Route::post('/packages/toggleActive/{id}', [PackagesController::class, 'toggleActive'])
+            ->name('toggleActive');
 
         /*  Route::delete('/packages/destroyAll', [PackagesController::class, 'destroyAll'])
               ->name('destroyAll');*/

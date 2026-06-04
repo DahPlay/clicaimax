@@ -131,6 +131,29 @@ class PackagesController extends Controller
         return redirect()->route('panel.packages.index');
     }
 
+    public function toggleActive($id): JsonResponse
+    {
+        $item = $this->model->find($id);
+
+        if (!$item) {
+            return response()->json([
+                'status' => 400,
+                'errors' => [
+                    'message' => ['Os dados não foram encontrados!']
+                ],
+            ]);
+        }
+
+        $item->is_active = $item->is_active ? 0 : 1;
+        $item->save();
+
+        return response()->json([
+            'status' => 200,
+            'is_active' => (int) $item->is_active,
+            'message' => $item->is_active ? 'Ativado' : 'Desativado',
+        ]);
+    }
+
 
     /*public function deleteAll(): View
     {
