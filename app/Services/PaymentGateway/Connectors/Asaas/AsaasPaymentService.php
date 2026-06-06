@@ -48,42 +48,48 @@ class AsaasPaymentService
                 ]);
 
                 Log::info("Pagamento confirmado para a ordem {$order->id}.");
+
+                // Pacotes que o cliente passa a ter direito após o pagamento.
+                $packagesToCreate = [];
                 //este if impede que seja enviado cupom de desconto durante a troca de plano
                 // remova o if depois de implementar cupom na troca de plano
                 if (!$order->changed_plan) {
                     $customer = \App\Models\Customer::find($order->customer_id);
-                    $packagesToCreate = [];
-                    if ($customer->coupon_id != null) {
+                    if ($customer && $customer->coupon_id != null) {
                         $coupon = Coupon::find($customer->coupon_id);
-
-                        $packagesToCreate[] = $coupon->cod;
+                        if ($coupon) {
+                            $packagesToCreate[] = $coupon->cod;
+                        }
                     }
                 }
                 foreach ($order->plan->packagePlans as $packagePlan) {
                     $pack = Package::find($packagePlan->package_id);
-                    $packagesToCreate[] = $pack->cod;
-                };
-
-                $planInYoucast = (new PlanHistory())->handle($order->customer->viewers_id);
-
-                if ($planInYoucast['response']) {
-                    foreach ($planInYoucast['response'] as $item) {
-                        $planExists = in_array($item['viewers_bouquets_products_id'], $packagesToCreate);
-
-                        //verifica se o plano de suspensão está ativo e remove ele
-                        $suspension = $this->getSuspension();
-
-                        if ($suspension && $item['viewers_bouquets_products_id'] == $suspension->cod && $item['viewers_bouquets_cancelled'] == 0) {
-                            $planToCancel = [$suspension->cod];
-                            (new PlanCancelService($planToCancel, $order->customer->viewers_id))->cancelPlan();
-                        }
-
-                        //ativa novamente os planos cancelados que pertencem ao pedido pago
-                        if (!$planExists || $item['viewers_bouquets_cancelled'] == 1) {
-                            (new PlanCreateService($packagesToCreate, $order->customer->viewers_id))->createPlan();
-                        }
+                    if ($pack) {
+                        $packagesToCreate[] = $pack->cod;
                     }
                 };
+
+                $suspension = $this->getSuspension();
+                $planInYoucast = (new PlanHistory())->handle($order->customer->viewers_id);
+                $youcastList = $planInYoucast['response'] ?? [];
+
+                // 1) Remove o pacote de suspensão, se estiver ativo no YouCast.
+                if ($suspension && is_array($youcastList)) {
+                    foreach ($youcastList as $item) {
+                        if ($item['viewers_bouquets_products_id'] == $suspension->cod && $item['viewers_bouquets_cancelled'] == 0) {
+                            (new PlanCancelService([$suspension->cod], $order->customer->viewers_id))->cancelPlan();
+                            break;
+                        }
+                    }
+                }
+
+                // 2) Cria/reativa os pacotes do pedido pago. Roda sempre — se o cliente
+                //    foi criado no YouCast sem pacotes (porque não havia suspensão
+                //    cadastrada), o histórico vem vazio mas os pacotes precisam ser
+                //    adicionados agora.
+                if (!empty($packagesToCreate)) {
+                    (new PlanCreateService($packagesToCreate, $order->customer->viewers_id))->createPlan();
+                }
                 break;
 
             case 'PAYMENT_CREATED':

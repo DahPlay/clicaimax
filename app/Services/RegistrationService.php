@@ -341,21 +341,35 @@ class RegistrationService
         $value = $plan->value;
 
         $coupon = null;
-        $packagesToCreate = [];
-
         if ($couponId) {
             $coupon = Coupon::find($couponId);
             if ($coupon) {
                 $value = $plan->value - ($plan->value * ($coupon->percent / 100));
-                $packagesToCreate[] = $coupon->cod;
             }
         }
 
+        $hasFreeDays  = ((int) $plan->free_for_days) > 0;
+        $planPackages = [];
         foreach ($plan->packagePlans as $packagePlan) {
             $package = Package::find($packagePlan->package_id);
             if ($package) {
-                $packagesToCreate[] = $package->cod;
+                $planPackages[] = $package->cod;
             }
+        }
+        $suspension = (new Package())->getSuspensionPackage();
+
+        // Regra:
+        //  - Com dias grátis -> entra com os pacotes reais do plano (mais o do cupom, se houver).
+        //  - Sem dias grátis -> entra com o pacote de suspensão (se cadastrado); a entrada
+        //    dos pacotes reais acontece no webhook PAYMENT_RECEIVED do Asaas.
+        //  - Sem suspensão cadastrada -> cria o cliente no streaming sem pacote nenhum.
+        if ($hasFreeDays) {
+            $packagesToCreate = $planPackages;
+            if ($coupon) {
+                $packagesToCreate[] = $coupon->cod;
+            }
+        } else {
+            $packagesToCreate = $suspension ? [$suspension->cod] : [];
         }
 
         $order = Order::create([
@@ -370,7 +384,19 @@ class RegistrationService
             'consent_id' => $consent_id,
         ]);
 
-        (new PlanCreateService($packagesToCreate, $customer->viewers_id))->createPlan();
+        Log::channel('registration')->info('YouCast - pacotes na criação do cliente', [
+            'order_id'      => $order->id,
+            'viewers_id'    => $customer->viewers_id,
+            'free_for_days' => $plan->free_for_days,
+            'has_free_days' => $hasFreeDays,
+            'plan_packages' => $planPackages,
+            'suspension'    => $suspension?->cod,
+            'created'       => $packagesToCreate,
+        ]);
+
+        if (!empty($packagesToCreate)) {
+            (new PlanCreateService($packagesToCreate, $customer->viewers_id))->createPlan();
+        }
 
         return $order;
     }

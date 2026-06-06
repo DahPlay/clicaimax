@@ -1295,7 +1295,6 @@
                 } finally {
                     $btn.removeClass('is-loading').prop('disabled', false).html(originalHtml);
                     $back.prop('disabled', false);
-                    navigateToStep(5);
                 }
 
                 return false;
@@ -1575,12 +1574,14 @@
                              PIX:         '<i class="fa fa-qrcode mr-2"></i>PIX',
                              BOLETO:      '<i class="fa fa-barcode mr-2"></i>Boleto' };
             const allowed = getAllowedBillingTypes();
+            // Mantém a forma já escolhida pelo usuário se ainda for permitida pelo plano.
+            const current = $('#billing_type').val();
+            const initial = (current && allowed.includes(current)) ? current : (allowed[0] || 'CREDIT_CARD');
             const $pills = $('#payMethodPills').empty();
-            allowed.forEach((m, i) => {
+            allowed.forEach((m) => {
                 const html = labels[m] || m;
-                $pills.append(`<button type="button" class="pay-method-pill ${i === 0 ? 'active' : ''}" data-method="${m}">${html}</button>`);
+                $pills.append(`<button type="button" class="pay-method-pill ${m === initial ? 'active' : ''}" data-method="${m}">${html}</button>`);
             });
-            const initial = allowed[0] || 'CREDIT_CARD';
             $('#billing_type').val(initial);
             $('[data-pay-block]').hide();
             $(`[data-pay-block="${initial}"]`).show();
