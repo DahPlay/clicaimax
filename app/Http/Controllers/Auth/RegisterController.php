@@ -189,7 +189,19 @@ class RegisterController extends Controller
 
     public function register(Request $request, CustomerService $customerService, RegistrationService $registrationService)
     {
-        $this->validator($request->all())->validate();
+        $wantsJson = $request->ajax() || $request->wantsJson() || $request->expectsJson();
+
+        $validator = $this->validator($request->all());
+        if ($validator->fails()) {
+            if ($wantsJson) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Verifique os campos destacados antes de continuar.',
+                    'errors' => $validator->errors()->all(),
+                ], 422);
+            }
+            return back()->withInput()->withErrors($validator);
+        }
 
         $data = $request->only([
             'plan_id',
@@ -245,8 +257,11 @@ class RegisterController extends Controller
                         'plan_id' => $planId,
                         'email' => $data['email'] ?? 'n/a',
                     ]);
+                    if ($wantsJson) {
+                        return response()->json(['ok' => false, 'message' => 'Cupom inválido.'], 422);
+                    }
                     toastr()->info("Cupom inválido.");
-                    return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
+                    return back()->withInput()->withErrors(['error' => 'Cupom inválido.']);
                 }
 
                 $discountedValue = $this->getDiscount($plan, $coupon);
@@ -259,8 +274,12 @@ class RegisterController extends Controller
                         'final_value' => $discountedValue,
                         'email' => $data['email'] ?? 'n/a',
                     ]);
-                    toastr()->info("O valor final de R$$discountedValueFormat após o cupom ser aplicado não pode ser menor que R$5,00.");
-                    return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
+                    $msg = "O valor final de R$ $discountedValueFormat após o cupom ser aplicado não pode ser menor que R$ 5,00.";
+                    if ($wantsJson) {
+                        return response()->json(['ok' => false, 'message' => $msg], 422);
+                    }
+                    toastr()->info($msg);
+                    return back()->withInput()->withErrors(['error' => $msg]);
                 }
             }
 
@@ -292,6 +311,14 @@ class RegisterController extends Controller
                 'youcast_id' => $customer->viewers_id,
             ]);
 
+            if ($wantsJson) {
+                return response()->json([
+                    'ok' => true,
+                    'message' => 'Criado com sucesso! Acesse seu e-mail ou faça login.',
+                    'redirect' => url('/login'),
+                ]);
+            }
+
             toastr()->success('Criado com sucesso! Acesse seu e-mail ou faça login.');
             return redirect('/login');
         } catch (\InvalidArgumentException $e) {
@@ -300,6 +327,9 @@ class RegisterController extends Controller
                 'email' => $data['email'] ?? 'n/a',
                 'login' => $data['login'] ?? 'n/a',
             ]);
+            if ($wantsJson) {
+                return response()->json(['ok' => false, 'message' => $e->getMessage()], 422);
+            }
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         } catch (\Exception $e) {
             Log::channel('registration')->error('Erro crítico no registro', [
@@ -308,6 +338,12 @@ class RegisterController extends Controller
                 'email' => $data['email'] ?? 'n/a',
                 'login' => $data['login'] ?? 'n/a',
             ]);
+            if ($wantsJson) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $e->getMessage() ?: 'Não foi possível concluir o cadastro. Tente novamente.',
+                ], 422);
+            }
             toastr()->info($e->getMessage());
             return back()->withInput()->withErrors(['error' => 'Ocorreu uma falha ao processar seu cadastro. Tente novamente.']);
         }

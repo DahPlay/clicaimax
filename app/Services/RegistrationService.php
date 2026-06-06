@@ -403,13 +403,23 @@ class RegistrationService
 
         // Usa o billing_type efetivo do pedido (escolhido pelo usuário no Step 5),
         // não o singular legado do plano. Token só vai junto se for cartão.
-        $billingType = $order->billing_type ?: ($plan->billing_type ?: 'CREDIT_CARD');
+        // IMPORTANTE: o accessor do Order traduz o valor enum para o label em PT-BR
+        // (ex.: CREDIT_CARD -> "CARTÃO DE CRÉDITO"). A API do Asaas exige o valor
+        // bruto do enum, então lemos via getRawOriginal().
+        $billingType = $order->getRawOriginal('billing_type')
+            ?: ($plan->billing_type ?: 'CREDIT_CARD');
+
+        // PIX e BOLETO no Asaas exigem nextDueDate >= D+1.
+        $nextDueDate = now()->addDays(max((int) $plan->free_for_days, 0));
+        if (in_array($billingType, ['PIX', 'BOLETO'], true) && $nextDueDate->isToday()) {
+            $nextDueDate = now()->addDay();
+        }
 
         $payload = [
             'customer' => $customer->customer_id,
             'billingType' => $billingType,
             'value' => $value,
-            'nextDueDate' => now()->addDays($plan->free_for_days)->format('Y-m-d'),
+            'nextDueDate' => $nextDueDate->format('Y-m-d'),
             'cycle' => $plan->cycle,
             'description' => "Assinatura do plano $plan->name",
             'externalReference' => 'Pedido: ' . $order->id,
@@ -419,11 +429,20 @@ class RegistrationService
             $payload['creditCardToken'] = $customer->credit_card_token;
         }
 
+        Log::channel('registration')->debug('Asaas - payload da assinatura', [
+            'customer_id' => $customer->id,
+            'order_id' => $order->id,
+            'payload' => array_diff_key($payload, ['creditCardToken' => true]),
+        ]);
+
         $response = $gateway->subscription()->create($payload);
 
         if (isset($response['error'])) {
-            $error = $response['error']['errors'][0]['description'] ?? 'Erro ao criar assinatura';
-            Log::channel('registration')->error("Asaas - erro na assinatura para {$customer->name}: {$error}");
+            $errors = $response['error']['errors'] ?? [];
+            $error = $errors[0]['description'] ?? 'Erro ao criar assinatura no Asaas';
+            Log::channel('registration')->error("Asaas - erro na assinatura para {$customer->name}: {$error}", [
+                'errors_payload' => $response['error'] ?? null,
+            ]);
             throw new \Exception($error);
         }
 

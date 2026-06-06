@@ -136,6 +136,29 @@
         font-weight: 600;
     }
 
+    .btn-submit[disabled],
+    .btn-submit.is-loading {
+        opacity: 0.85;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn-submit .btn-spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: -2px;
+        animation: btn-spin 0.7s linear infinite;
+    }
+
+    @keyframes btn-spin {
+        to { transform: rotate(360deg); }
+    }
+
     .footer-links {
         margin-top: 30px;
         text-align: center;
@@ -1194,14 +1217,88 @@
                 navigateToStep(visible[idx + 1]);
             });
 
-            // Submit do form (Step 5)
+            // Submit do form (Step 5) — sempre via AJAX, com spinner e modal de erro
             $('#registerForm').on('submit', async function (e) {
+                e.preventDefault();
+
+                const $form   = $(this);
+                const $btn    = $form.find('.btn-submit');
+                const $back   = $form.find('.step-content[data-step-content="5"] .btn-back');
+                if ($btn.prop('disabled')) return false;
+
                 const missing = await validateStep(5);
                 renderStepAlert(5, missing);
-                if (missing.length) {
-                    e.preventDefault();
-                    return false;
+                if (missing.length) return false;
+
+                const originalHtml = $btn.html();
+                $btn.addClass('is-loading').prop('disabled', true)
+                    .html('<span class="btn-spinner"></span>Processando...');
+                $back.prop('disabled', true);
+
+                try {
+                    const fd = new FormData($form[0]);
+                    const res = await fetch($form.attr('action'), {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': CSRF,
+                        },
+                        credentials: 'same-origin',
+                    });
+
+                    let payload = null;
+                    try { payload = await res.json(); } catch (_) { payload = null; }
+
+                    if (res.ok && payload && payload.ok) {
+                        if (typeof Swal !== 'undefined') {
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Cadastro concluído!',
+                                text: payload.message || 'Acesse seu e-mail ou faça login.',
+                                confirmButtonText: 'Ir para o login',
+                            });
+                        }
+                        window.location.href = payload.redirect || '{{ route('login') }}';
+                        return false;
+                    }
+
+                    const msg = (payload && payload.message)
+                        || 'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.';
+                    const list = (payload && Array.isArray(payload.errors) && payload.errors.length)
+                        ? '<ul style="text-align:left;margin:0;padding-left:18px;">'
+                          + payload.errors.map(e => '<li>' + $('<div>').text(e).html() + '</li>').join('')
+                          + '</ul>'
+                        : '';
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Falha no cadastro',
+                            html: '<div style="margin-bottom:8px">' + $('<div>').text(msg).html() + '</div>' + list,
+                            confirmButtonText: 'Revisar dados',
+                        });
+                    } else {
+                        alert(msg);
+                    }
+                } catch (err) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro de conexão',
+                            text: 'Não foi possível enviar o cadastro. Verifique sua internet e tente novamente.',
+                        });
+                    } else {
+                        alert('Erro de conexão. Tente novamente.');
+                    }
+                } finally {
+                    $btn.removeClass('is-loading').prop('disabled', false).html(originalHtml);
+                    $back.prop('disabled', false);
+                    navigateToStep(5);
                 }
+
+                return false;
             });
 
             $('.btn-back').on('click', function() {
