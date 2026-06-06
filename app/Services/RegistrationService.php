@@ -477,11 +477,33 @@ class RegistrationService
             throw new \Exception('Assinatura não foi criada corretamente no Asaas.');
         }
 
-        $order->update([
+        $update = [
             'subscription_asaas_id' => $response['id'],
-            'customer_asaas_id' => $response['customer'] ?? null,
-            'status' => $response['status'] ?? null,
-            'description' => $response['description'] ?? null,
-        ]);
+            'customer_asaas_id'     => $response['customer'] ?? null,
+            'status'                => $response['status'] ?? null,
+            'description'           => $response['description'] ?? null,
+        ];
+
+        // Busca a primeira fatura gerada para a assinatura. Sem isso a tela
+        // de "Ver Fatura" não consegue montar a URL do iframe pro Asaas no
+        // primeiro acesso (o webhook PAYMENT_CREATED só chegaria depois).
+        try {
+            $payments = $gateway->subscription()->getPayments($response['id']);
+            $firstPayment = $payments['data'][0] ?? null;
+            if ($firstPayment && isset($firstPayment['id'])) {
+                $update['payment_asaas_id'] = $firstPayment['id'];
+                $update['payment_status']   = $firstPayment['status'] ?? null;
+                if (!empty($firstPayment['invoiceUrl'])) {
+                    $update['boleto_url'] = $firstPayment['invoiceUrl'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::channel('registration')->warning('Asaas - falha ao buscar primeira fatura da assinatura', [
+                'subscription_id' => $response['id'],
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $order->update($update);
     }
 }

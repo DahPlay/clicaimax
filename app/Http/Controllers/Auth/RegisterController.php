@@ -311,16 +311,31 @@ class RegisterController extends Controller
                 'youcast_id' => $customer->viewers_id,
             ]);
 
+            // Auto-login + redirect direto para "Assinaturas" com flag pra abrir
+            // o modal "Ver Fatura" do pedido recém-criado (PIX QR / Boleto / Cartão).
+            $newUser = $customer->user_id ? User::find($customer->user_id) : null;
+            $firstOrder = \App\Models\Order::where('customer_id', $customer->id)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($newUser) {
+                auth()->login($newUser);
+            }
+
+            $target = $firstOrder
+                ? route('panel.orders.index') . '?openInvoice=' . $firstOrder->id
+                : route('panel.orders.index');
+
             if ($wantsJson) {
                 return response()->json([
                     'ok' => true,
-                    'message' => 'Criado com sucesso! Acesse seu e-mail ou faça login.',
-                    'redirect' => url('/login'),
+                    'message' => 'Cadastro concluído! Você já está logado.',
+                    'redirect' => $target,
                 ]);
             }
 
-            toastr()->success('Criado com sucesso! Acesse seu e-mail ou faça login.');
-            return redirect('/login');
+            toastr()->success('Cadastro concluído com sucesso!');
+            return redirect($target);
         } catch (\InvalidArgumentException $e) {
             Log::channel('registration')->warning('Falha na validação do registro', [
                 'error' => $e->getMessage(),

@@ -4,6 +4,7 @@
     <script>
         $(function() {
             initDatatable();
+            autoOpenInvoiceFromQuery();
 
             $(document).on('click', ".btn-add", function(e) {
                 openModal(this, e, 'modal-lg');
@@ -38,6 +39,41 @@
                 openModalOut(this, e, "change-card")
             });
         });
+
+        // Abre automaticamente o modal "Ver Fatura" quando vier de
+        // /register?openInvoice=ID (logo após o cadastro concluído).
+        function autoOpenInvoiceFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('openInvoice');
+            if (!id) return;
+
+            const $trigger = $('<a/>', {
+                'href': 'javascript:;',
+                'data-id': id,
+                'data-url': '/orders/invoice',
+                'data-modal-size': 'modal-xl',
+                'class': 'btn-edit d-none'
+            }).appendTo('body');
+
+            const fire = function () {
+                try { $trigger.trigger('click'); } catch (e) { /* noop */ }
+            };
+
+            if (typeof openModal === 'function') {
+                setTimeout(fire, 250);
+            } else {
+                $(document).one('initialized.dt', fire);
+                setTimeout(fire, 800);
+            }
+
+            // Remove o openInvoice da URL pra não reabrir em refresh.
+            if (window.history && window.history.replaceState) {
+                params.delete('openInvoice');
+                const qs = params.toString();
+                const url = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+                window.history.replaceState({}, document.title, url);
+            }
+        }
 
         function removeImage() {
             event.preventDefault();
