@@ -22,6 +22,7 @@
     };
 @endphp
 
+<div class="modal-content">
 <div class="modal-header bg-gradient text-white" style="background:linear-gradient(90deg,#1d4ed8 0%,#2563eb 100%);">
     <h5 class="modal-title">
         <i class="fa fa-file-invoice-dollar mr-2"></i>
@@ -152,3 +153,25 @@
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
 </div>
+</div>{{-- /.modal-content --}}
+
+<script>
+(function () {
+    // Força backdrop estático e ESC desabilitado para que apenas o X
+    // ou o botão Fechar dispensem este modal. Restaura ao fechar
+    // para não afetar outros modais que reutilizam #modal.
+    var $m = $('#modal');
+    var inst = $m.data('bs.modal');
+    if (inst && inst._config) {
+        inst._config.backdrop = 'static';
+        inst._config.keyboard = false;
+    }
+    $m.one('hidden.bs.modal', function () {
+        var i = $m.data('bs.modal');
+        if (i && i._config) {
+            i._config.backdrop = true;
+            i._config.keyboard = true;
+        }
+    });
+})();
+</script>

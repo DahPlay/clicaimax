@@ -48,8 +48,14 @@ class OrderController extends Controller
         // Sub-query: para cada ordem, pega a fatura mais antiga ainda em aberto
         // (PENDING / AWAITING_RISK_ANALYSIS / CONFIRMED / OVERDUE). Quando não houver
         // nenhuma em aberto, cai no fallback de orders.next_due_date/payment_status.
+        // Para PAGAMENTO/VENCIMENTO mostramos:
+        //   1) fatura PENDENTE/VENCIDA mais antiga, ou
+        //   2) na ausência, a última PAGA, ou
+        //   3) fallback antigo (orders.payment_status/next_due_date).
         $openStatuses = \App\Models\OrderPayment::OPEN_STATUSES;
-        $placeholders = implode(',', array_fill(0, count($openStatuses), '?'));
+        $paidStatuses = \App\Models\OrderPayment::PAID_STATUSES;
+        $openPh       = implode(',', array_fill(0, count($openStatuses), '?'));
+        $paidPh       = implode(',', array_fill(0, count($paidStatuses), '?'));
 
         $oldestOpen = DB::table('order_payments as op1')
             ->select([
@@ -62,15 +68,31 @@ class OrderController extends Controller
             ->whereRaw("op1.id = (
                 SELECT op2.id FROM order_payments op2
                 WHERE op2.order_id = op1.order_id
-                  AND op2.status IN ({$placeholders})
+                  AND op2.status IN ({$openPh})
                 ORDER BY op2.due_date ASC, op2.id ASC LIMIT 1
             )", $openStatuses);
+
+        $latestPaid = DB::table('order_payments as op1')
+            ->select([
+                'op1.order_id',
+                'op1.due_date as latest_paid_due_date',
+                'op1.status as latest_paid_status',
+                'op1.payment_asaas_id as latest_paid_payment_id',
+            ])
+            ->whereIn('op1.status', $paidStatuses)
+            ->whereRaw("op1.id = (
+                SELECT op2.id FROM order_payments op2
+                WHERE op2.order_id = op1.order_id
+                  AND op2.status IN ({$paidPh})
+                ORDER BY op2.due_date DESC, op2.id DESC LIMIT 1
+            )", $paidStatuses);
 
         $orders = $this->model
             ->with(['customer:id,name', 'plan:id,name'])
             ->leftJoin('customers', 'customers.id', '=', 'orders.customer_id')
             ->leftJoin('coupons', 'coupons.id', '=', 'customers.coupon_id')
             ->leftJoinSub($oldestOpen, 'oldest_open', 'oldest_open.order_id', '=', 'orders.id')
+            ->leftJoinSub($latestPaid, 'latest_paid', 'latest_paid.order_id', '=', 'orders.id')
             ->select([
                 'orders.id',
                 'orders.customer_id',
@@ -88,6 +110,9 @@ class OrderController extends Controller
                 'oldest_open.oldest_open_due_date',
                 'oldest_open.oldest_open_status',
                 'oldest_open.oldest_open_payment_id',
+                'latest_paid.latest_paid_due_date',
+                'latest_paid.latest_paid_status',
+                'latest_paid.latest_paid_payment_id',
             ]);
 
         return DataTables::of($orders)
@@ -137,18 +162,10 @@ class OrderController extends Controller
                     return 'Free';
                 }
 
-                // Prioriza a fatura mais antiga em aberto (vinda de order_payments).
-                $status      = $order->oldest_open_status   ?? $order->payment_status;
-                $referenceDt = $order->oldest_open_due_date ?? $order->next_due_date;
-
-                if ($referenceDt) {
-                    $currentDate = Carbon::now()->startOfDay();
-                    $dueDate     = Carbon::parse($referenceDt)->startOfDay();
-
-                    if (!$order->oldest_open_status && $dueDate > $currentDate) {
-                        return 'GRÁTIS';
-                    }
-                }
+                // Prioridade: pendente mais antiga -> última paga -> fallback orders.payment_status.
+                $status = $order->oldest_open_status
+                    ?? $order->latest_paid_status
+                    ?? $order->payment_status;
 
                 return PaymentStatusOrderAsaasEnum::tryFrom($status)?->getName() ?? $status;
             })
@@ -161,18 +178,19 @@ class OrderController extends Controller
                     ->pluck('value')
                     ->toArray();
 
-                // Busca tanto pela fatura mais antiga em aberto quanto pelo fallback da orders.
-                $query->where(function ($q) use ($matchingStatuses) {
-                    $q->whereIn('oldest_open.oldest_open_status', $matchingStatuses)
-                      ->orWhere(function ($q2) use ($matchingStatuses) {
-                          $q2->whereNull('oldest_open.oldest_open_status')
-                             ->whereIn('orders.payment_status', $matchingStatuses);
-                      });
-                });
+                if (empty($matchingStatuses)) {
+                    return;
+                }
+
+                $placeholders = implode(',', array_fill(0, count($matchingStatuses), '?'));
+                $query->whereRaw(
+                    "COALESCE(oldest_open.oldest_open_status, latest_paid.latest_paid_status, orders.payment_status) IN ({$placeholders})",
+                    $matchingStatuses
+                );
             })
             ->orderColumn(
                 'payment_status',
-                'COALESCE(oldest_open.oldest_open_status, orders.payment_status) $1'
+                'COALESCE(oldest_open.oldest_open_status, latest_paid.latest_paid_status, orders.payment_status) $1'
             )
             ->editColumn('cycle', function ($order) {
                 return $order->value == 0
@@ -192,20 +210,22 @@ class OrderController extends Controller
                     return 'Sem data';
                 }
 
-                // Prefere o vencimento da fatura mais antiga em aberto.
-                $date = $order->oldest_open_due_date ?? $order->next_due_date;
+                // Prioridade: pendente mais antiga -> última paga -> fallback orders.next_due_date.
+                $date = $order->oldest_open_due_date
+                    ?? $order->latest_paid_due_date
+                    ?? $order->next_due_date;
 
                 return $date ? date('d/m/Y', strtotime($date)) : 'Sem data';
             })
             ->filterColumn('next_due_date', function ($query, $value) {
                 $query->whereRaw(
-                    "DATE_FORMAT(COALESCE(oldest_open.oldest_open_due_date, orders.next_due_date),'%d/%m/%Y') like ?",
+                    "DATE_FORMAT(COALESCE(oldest_open.oldest_open_due_date, latest_paid.latest_paid_due_date, orders.next_due_date),'%d/%m/%Y') like ?",
                     ["%$value%"]
                 );
             })
             ->orderColumn(
                 'next_due_date',
-                'COALESCE(oldest_open.oldest_open_due_date, orders.next_due_date) $1'
+                'COALESCE(oldest_open.oldest_open_due_date, latest_paid.latest_paid_due_date, orders.next_due_date) $1'
             )
             ->editColumn('created_at', function ($order) {
                 return $order->created_at ? date('d/m/Y H:i:s', strtotime($order->created_at)) : 'Sem data';

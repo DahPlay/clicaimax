@@ -37,7 +37,8 @@ class OrderPayment extends Model
         'raw'                 => 'array',
     ];
 
-    public const OPEN_STATUSES = ['PENDING', 'AWAITING_RISK_ANALYSIS', 'CONFIRMED', 'OVERDUE'];
+    public const OPEN_STATUSES = ['PENDING', 'AWAITING_RISK_ANALYSIS', 'OVERDUE'];
+    public const PAID_STATUSES = ['RECEIVED', 'RECEIVED_IN_CASH', 'CONFIRMED'];
 
     public function order(): BelongsTo
     {
