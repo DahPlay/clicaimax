@@ -45,10 +45,32 @@ class OrderController extends Controller
 
     public function loadDatatable(): JsonResponse
     {
+        // Sub-query: para cada ordem, pega a fatura mais antiga ainda em aberto
+        // (PENDING / AWAITING_RISK_ANALYSIS / CONFIRMED / OVERDUE). Quando não houver
+        // nenhuma em aberto, cai no fallback de orders.next_due_date/payment_status.
+        $openStatuses = \App\Models\OrderPayment::OPEN_STATUSES;
+        $placeholders = implode(',', array_fill(0, count($openStatuses), '?'));
+
+        $oldestOpen = DB::table('order_payments as op1')
+            ->select([
+                'op1.order_id',
+                'op1.due_date as oldest_open_due_date',
+                'op1.status as oldest_open_status',
+                'op1.payment_asaas_id as oldest_open_payment_id',
+            ])
+            ->whereIn('op1.status', $openStatuses)
+            ->whereRaw("op1.id = (
+                SELECT op2.id FROM order_payments op2
+                WHERE op2.order_id = op1.order_id
+                  AND op2.status IN ({$placeholders})
+                ORDER BY op2.due_date ASC, op2.id ASC LIMIT 1
+            )", $openStatuses);
+
         $orders = $this->model
             ->with(['customer:id,name', 'plan:id,name'])
             ->leftJoin('customers', 'customers.id', '=', 'orders.customer_id')
             ->leftJoin('coupons', 'coupons.id', '=', 'customers.coupon_id')
+            ->leftJoinSub($oldestOpen, 'oldest_open', 'oldest_open.order_id', '=', 'orders.id')
             ->select([
                 'orders.id',
                 'orders.customer_id',
@@ -63,6 +85,9 @@ class OrderController extends Controller
                 'orders.created_at',
                 'orders.payment_asaas_id',
                 'coupons.name as coupon_name',
+                'oldest_open.oldest_open_due_date',
+                'oldest_open.oldest_open_status',
+                'oldest_open.oldest_open_payment_id',
             ]);
 
         return DataTables::of($orders)
@@ -112,14 +137,20 @@ class OrderController extends Controller
                     return 'Free';
                 }
 
-                $currentDate = Carbon::now()->startOfDay();
-                $nextDueDate = Carbon::parse($order->next_due_date)->startOfDay();
+                // Prioriza a fatura mais antiga em aberto (vinda de order_payments).
+                $status      = $order->oldest_open_status   ?? $order->payment_status;
+                $referenceDt = $order->oldest_open_due_date ?? $order->next_due_date;
 
-                if ($nextDueDate > $currentDate) {
-                    return 'GRÁTIS';
+                if ($referenceDt) {
+                    $currentDate = Carbon::now()->startOfDay();
+                    $dueDate     = Carbon::parse($referenceDt)->startOfDay();
+
+                    if (!$order->oldest_open_status && $dueDate > $currentDate) {
+                        return 'GRÁTIS';
+                    }
                 }
 
-                return PaymentStatusOrderAsaasEnum::tryFrom($order->payment_status)?->getName() ?? $order->payment_status;
+                return PaymentStatusOrderAsaasEnum::tryFrom($status)?->getName() ?? $status;
             })
             ->editColumn('payment_asaas_id', function ($item) {
                 return view('panel.orders.local.index.datatable.payment_asaas_id', compact('item'));
@@ -130,8 +161,19 @@ class OrderController extends Controller
                     ->pluck('value')
                     ->toArray();
 
-                $query->whereIn('payment_status', $matchingStatuses);
+                // Busca tanto pela fatura mais antiga em aberto quanto pelo fallback da orders.
+                $query->where(function ($q) use ($matchingStatuses) {
+                    $q->whereIn('oldest_open.oldest_open_status', $matchingStatuses)
+                      ->orWhere(function ($q2) use ($matchingStatuses) {
+                          $q2->whereNull('oldest_open.oldest_open_status')
+                             ->whereIn('orders.payment_status', $matchingStatuses);
+                      });
+                });
             })
+            ->orderColumn(
+                'payment_status',
+                'COALESCE(oldest_open.oldest_open_status, orders.payment_status) $1'
+            )
             ->editColumn('cycle', function ($order) {
                 return $order->value == 0
                     ? 'Free'
@@ -150,11 +192,21 @@ class OrderController extends Controller
                     return 'Sem data';
                 }
 
-                return $order->next_due_date ? date('d/m/Y', strtotime($order->next_due_date)) : 'Sem data';
+                // Prefere o vencimento da fatura mais antiga em aberto.
+                $date = $order->oldest_open_due_date ?? $order->next_due_date;
+
+                return $date ? date('d/m/Y', strtotime($date)) : 'Sem data';
             })
             ->filterColumn('next_due_date', function ($query, $value) {
-                $query->whereRaw("DATE_FORMAT(next_due_date,'%d/%m/%Y') like ?", ["%$value%"]);
+                $query->whereRaw(
+                    "DATE_FORMAT(COALESCE(oldest_open.oldest_open_due_date, orders.next_due_date),'%d/%m/%Y') like ?",
+                    ["%$value%"]
+                );
             })
+            ->orderColumn(
+                'next_due_date',
+                'COALESCE(oldest_open.oldest_open_due_date, orders.next_due_date) $1'
+            )
             ->editColumn('created_at', function ($order) {
                 return $order->created_at ? date('d/m/Y H:i:s', strtotime($order->created_at)) : 'Sem data';
             })
@@ -359,17 +411,49 @@ class OrderController extends Controller
 
     public function invoice($id): View
     {
-        $order = $this->model->find($id);
+        $order = $this->model->with(['customer:id,name', 'plan:id,name'])->find($id);
 
-        $url = null;
-        if ($order && $order->payment_asaas_id) {
-            $idSemPrefixo = str_replace('pay_', '', $order->payment_asaas_id);
-            $environment  = app()->isLocal() ? 'sandbox' : 'production';
-            $urlBase      = config("asaas.{$environment}.fatura_url");
-            $url          = rtrim((string) $urlBase, '/') . '/i/' . $idSemPrefixo;
+        $environment = app()->isLocal() ? 'sandbox' : 'production';
+        $faturaBase  = rtrim((string) config("asaas.{$environment}.fatura_url"), '/');
+
+        $payments     = collect();
+        $subscription = null;
+
+        if ($order && $order->subscription_asaas_id) {
+            // Tenta sincronizar com dados frescos do Asaas. Se a chamada falhar
+            // (rede/token), o modal continua exibindo o cache local de order_payments.
+            try {
+                $gateway = new Gateway(new AsaasConnector());
+
+                $subResponse = $gateway->subscription()->get($order->subscription_asaas_id);
+                if (empty($subResponse['error'])) {
+                    $subscription = $subResponse;
+                }
+
+                $payResponse = $gateway->subscription()->getPayments($order->subscription_asaas_id);
+                if (empty($payResponse['error'])) {
+                    foreach (($payResponse['data'] ?? []) as $p) {
+                        if (!empty($p['id'])) {
+                            \App\Models\OrderPayment::upsertFromAsaas($order->id, $p);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Falha ao sincronizar Asaas no modal de fatura (pedido #{$order->id}): " . $e->getMessage());
+            }
+
+            $payments = $order->payments()
+                ->orderBy('due_date', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
         }
 
-        return view('panel.orders.local.index.modals.invoice', compact('order', 'url'));
+        return view('panel.orders.local.index.modals.invoice', compact(
+            'order',
+            'subscription',
+            'payments',
+            'faturaBase'
+        ));
     }
 
     public function duplicate(): View

@@ -7,6 +7,7 @@ use App\Jobs\BackOrderOldPlanJob;
 use App\Jobs\updateSubscriptionAfterProportionalPayJob;
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\OrderPayment;
 use App\Models\Package;
 use App\Services\AppIntegration\PlanCancelService;
 use App\Services\AppIntegration\PlanCreateService;
@@ -31,6 +32,12 @@ class AsaasPaymentService
         if (!$order) {
             Log::warning("Ordem não encontrada para a assinatura $subscriptionId no evento $event.");
             return false;
+        }
+
+        if ($event !== 'PAYMENT_DELETED') {
+            OrderPayment::upsertFromAsaas($order->id, $data['payment']);
+        } else {
+            OrderPayment::where('payment_asaas_id', $paymentId)->delete();
         }
 
         switch ($event) {

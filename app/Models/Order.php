@@ -79,6 +79,19 @@ class Order extends Model
         return $this->hasMany(OrderHistory::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class);
+    }
+
+    public function oldestOpenPayment(): ?OrderPayment
+    {
+        return $this->payments()
+            ->whereIn('status', OrderPayment::OPEN_STATUSES)
+            ->orderBy('due_date', 'asc')
+            ->first();
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
